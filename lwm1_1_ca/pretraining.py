@@ -177,7 +177,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--scheduler-step-per-batch",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=False,
         help="Step the LR scheduler after every batch (True) or after every epoch (False).",
     )
 
@@ -309,7 +309,7 @@ def train_epoch(
     writer=None,
     epoch_idx: int = 0,
     non_blocking: bool = False,
-    scheduler_step_per_batch: bool = True,
+    scheduler_step_per_batch: bool = False,
 ) -> tuple:
     """
     Run one training epoch.
