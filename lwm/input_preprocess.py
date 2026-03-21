@@ -49,6 +49,7 @@ def scenarios_list():
         "O1_3p5_v1",
         "O1_3p5_v2",
         "Boston5G_3p5",
+        "Boston5G_3p5_RIS",
         "asu_campus1"
     ])
 
@@ -277,8 +278,12 @@ def get_parameters(scenario):
         'n_per_row': 181
     },
     'Boston5G_3p5': {
-        'n_rows': [1000, 2000],
-        'n_per_row': 1200
+        'n_rows': [812, 1622],
+        'n_per_row': 595
+    },
+    'Boston5G_3p5_RIS': {
+        'n_rows': 1622,
+            'n_per_row': 595
     },
     'O1_3p5_v1': {
         'n_rows': [0, 1*int(2751/20)],
