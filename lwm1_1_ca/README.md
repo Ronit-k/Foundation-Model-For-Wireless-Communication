@@ -266,8 +266,8 @@ After pretraining:
 
 | File | Description |
 |---|---|
-| `model_weights_ca_e2e.pth` | Full model state dict (CA + LWM 1.1) |
-| `model_weights_ca_e2e.log` | Training log with loss, LR, GPU memory per epoch |
+| `model1_1_weights_ca_e2e.pth` | Full model state dict (CA + LWM 1.1) |
+| `model1_1_weights_ca_e2e.log` | Training log with loss, LR, GPU memory per epoch |
 
 After benchmark:
 
@@ -288,8 +288,8 @@ After benchmark:
 | Patch format | flat real\|imag, patch_size=16 | 4x4 interleaved, patch_size=32 |
 | MCM masking | 15% symmetric | 40% uniform random |
 | Loss | MSE / Var | identical |
-| Downstream model | FCN (from lwm.utils) | SECNN (custom SE-Residual CNN) |
-| Scenarios | 16 scenarios | 25 scenarios (superset) |
+| Downstream model | SECNN (custom SE-Residual CNN) | SECNN (custom SE-Residual CNN) |
+| Scenarios | 16 scenarios | 16 scenarios |
 | Hyperparameters | all defaults | all matched |
 
 The only intentional differences are:
