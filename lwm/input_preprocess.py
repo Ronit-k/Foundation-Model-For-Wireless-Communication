@@ -296,7 +296,7 @@ def get_parameters(scenario):
     'asu_campus1': {
         'n_rows': 321,
         'n_per_row': 411
-    },
+    }}
   
     parameters = DeepMIMOv3.default_params()
 
