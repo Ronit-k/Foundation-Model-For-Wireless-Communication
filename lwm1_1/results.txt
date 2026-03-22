@@ -48,3 +48,18 @@ task: Beam Prediction
 Dataset Size: 33664, shape: torch.Size([33664, 128])
 epochs: 30, batch size: 32, input type: cls_emb
 task: Beam Prediction
+---------------------------- training Details ----------------------------
+Dataset Size: 519636, shape: torch.Size([519636, 128])
+epochs: 30, batch size: 32, input type: cls_emb
+task: Beam Prediction
+Split Ratio: 0.005 | Test Accuracy: 43.37% | Test F1: 0.4003
+
+Split Ratio: 0.01 | Test Accuracy: 42.36% | Test F1: 0.4046
+
+Split Ratio: 0.05 | Test Accuracy: 57.36% | Test F1: 0.5679
+
+Split Ratio: 0.1 | Test Accuracy: 58.76% | Test F1: 0.5758
+
+Split Ratio: 0.2 | Test Accuracy: 69.43% | Test F1: 0.6878
+
+Split Ratio: 0.4 | Test Accuracy: 73.71% | Test F1: 0.7314
