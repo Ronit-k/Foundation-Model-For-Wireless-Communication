@@ -87,11 +87,17 @@ state_dict = torch.load(f"{model_name}", map_location=device) #
 new_state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()} # Remove 'module.' prefix if it exists
 model.load_state_dict(new_state_dict) # Load the model weights
 
-lwm_model = nn.DataParallel(model, gpu_ids) # Wrap the model with DataParallel for multi-GPU support
+# lwm_model = nn.DataParallel(model, gpu_ids) # Wrap the model with DataParallel for multi-GPU support
+lwm_model = model  # remove DataParallel to save memory
 print(f"Model loaded successfully on GPU {device.index}") 
 
 # %%
-dataset = lwm_inference(lwm_model, preprocessed_data, selected_input_type, device)
+with torch.no_grad():
+    dataset = lwm_inference(lwm_model, preprocessed_data, selected_input_type, device)
+
+# move dataset to CPU immediately
+dataset = dataset.cpu()
+torch.cuda.empty_cache()
 # At this point, `dataset` should be a torch Dataset yielding (data, target) pairs.
 
 # %%
