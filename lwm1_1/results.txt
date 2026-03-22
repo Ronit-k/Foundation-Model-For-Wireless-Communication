@@ -63,3 +63,19 @@ Split Ratio: 0.1 | Test Accuracy: 58.76% | Test F1: 0.5758
 Split Ratio: 0.2 | Test Accuracy: 69.43% | Test F1: 0.6878
 
 Split Ratio: 0.4 | Test Accuracy: 73.71% | Test F1: 0.7314
+
+---------------------------- training Details ----------------------------
+Dataset Size: 519636, shape: torch.Size([519636, 64, 128])
+epochs: 30, batch size: 32, input type: channel_emb
+task: Beam Prediction
+Split Ratio: 0.005 | Test Accuracy: 72.82% | Test F1: 0.7119
+
+Split Ratio: 0.01 | Test Accuracy: 79.70% | Test F1: 0.7905
+
+Split Ratio: 0.05 | Test Accuracy: 88.79% | Test F1: 0.8866
+
+Split Ratio: 0.1 | Test Accuracy: 91.14% | Test F1: 0.9105
+
+Split Ratio: 0.2 | Test Accuracy: 93.09% | Test F1: 0.9302
+
+Split Ratio: 0.4 | Test Accuracy: 94.60% | Test F1: 0.9454

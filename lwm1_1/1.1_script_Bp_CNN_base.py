@@ -34,7 +34,7 @@ print("Using",device)
 #######SELECT INPUT##############################################
 # choose one: 'cls_emb', 'channel_emb', or 'raw'
 input_types = ['cls_emb', 'channel_emb', 'raw']
-selected_input_type = input_types[0] 
+selected_input_type = input_types[1] 
 ################Select Tasks#####################################
 tasks = ['LoS/NLoS Classification', 'Beam Prediction']
 task = tasks[1] # Choose 0 for LoS/NLoS labels or 1 for beam prediction labels.
