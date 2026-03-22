@@ -17,7 +17,7 @@ import pickle
 import DeepMIMOv3
 import torch
 from collections import defaultdict
-from utils import generate_gaussian_noise, plot_coverage
+from lwm1_1.utils import generate_gaussian_noise, plot_coverage
 #%% Scenarios List
 def scenarios_list():
     """Returns an array of available scenarios."""
@@ -165,7 +165,8 @@ def patch_gen(N_ROWS=4, N_COLUMNS=4, selected_scenario_names=None,
             
         cleaned_deepmimo_data = [deepmimo_data_cleaning(deepmimo_data[scenario_idx]) for scenario_idx in range(len(deepmimo_data))] #n_scenarios*n_bs_idxs
         patches = [patch_maker(cleaned_deepmimo_data[scenario_idx], N_ROWS, N_COLUMNS) for scenario_idx in range(len(deepmimo_data))]
-        raw_chs = torch.tensor(cleaned_deepmimo_data[0]).squeeze(1)
+        all_cleaned = np.concatenate(cleaned_deepmimo_data, axis=0)
+        raw_chs = torch.tensor(all_cleaned).squeeze(1)
         raw_chs = raw_chs.view(raw_chs.size(0), -1)
         raw_chs = torch.hstack((raw_chs.real, raw_chs.imag))
         
