@@ -137,12 +137,15 @@ def patch_gen(N_ROWS=4, N_COLUMNS=4, selected_scenario_names=None,
     else:
         deepmimo_data = []
         for scenario_name in selected_scenario_names:
-            if "O1" in scenario_name: # make an exception for bs idxs of the o1 scenario
+            current_bs_idxs = bs_idxs
+            if "O1" in scenario_name and "3p5B" not in scenario_name: # make an exception for bs idxs of the o1 scenario
                 if o1_bs_idx is None:
-                    bs_idxs = [4, 15]
+                    current_bs_idxs = [4, 15]
                 else:
-                    bs_idxs = o1_bs_idx
-            for bs_idx in bs_idxs:
+                    current_bs_idxs = o1_bs_idx
+            elif scenario_name in ['city_18_denver', 'city_15_indianapolis']:
+                current_bs_idxs = [3]
+            for bs_idx in current_bs_idxs:
                 if has_version_suffix(scenario_name) and bs_idx in [2,3]:
                     continue
                 if not load_data:
@@ -316,7 +319,7 @@ def DeepMIMO_data_gen(scenario, bs_idx):
     parameters, row_column_users = get_parameters(scenario, bs_idx)
     deepMIMO_dataset = DeepMIMOv3.generate_data(parameters)
     
-    if "O1" in scenario:
+    if "O1" in scenario and "3p5B" not in scenario:
         hops = [2, 2]
     else:
         hops = [1, 1]

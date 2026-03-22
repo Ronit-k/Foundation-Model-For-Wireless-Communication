@@ -40,3 +40,11 @@ task: Beam Prediction
 Dataset Size: 2308, shape: torch.Size([2308, 64, 128])
 epochs: 30, batch size: 32, input type: channel_emb
 task: Beam Prediction
+---------------------------- training Details ----------------------------
+Dataset Size: 33664, shape: torch.Size([33664, 128])
+epochs: 30, batch size: 32, input type: cls_emb
+task: Beam Prediction
+---------------------------- training Details ----------------------------
+Dataset Size: 33664, shape: torch.Size([33664, 128])
+epochs: 30, batch size: 32, input type: cls_emb
+task: Beam Prediction
