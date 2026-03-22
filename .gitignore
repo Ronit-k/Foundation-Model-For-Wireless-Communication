@@ -1,2 +1,10 @@
 scenarios
-*.npy
+downstream_cache
+**/__pycache__/
+**/lwm/__pycache__/
+**/lwm_axial/__pycache__/
+**/lwm_ca/__pycache__/
+**/lwm_physics/__pycache__/
+
+**/lwm1_1/__pycache__/
+**/lwm1_1_ca/__pycache__/
