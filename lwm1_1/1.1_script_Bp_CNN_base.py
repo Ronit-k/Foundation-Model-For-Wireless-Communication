@@ -67,7 +67,7 @@ n_beams = 64  # Set the number of beams for beam prediction task (adjust as need
 task_type = ["classification", "regression"][0]
 preprocessed_data, labels, raw_chs = tokenizer(
     selected_scenario_names,
-    bs_idxs=[3],
+    bs_idxs=[1],
     load_data=False,
     task=task,
     n_beams=n_beams,
