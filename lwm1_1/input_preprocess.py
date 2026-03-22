@@ -127,7 +127,7 @@ def scenarios_list():
 #%% Token Generation
 def patch_gen(N_ROWS=4, N_COLUMNS=4, selected_scenario_names=None, 
               manual_data=None, bs_idxs=[1,2,3], load_data=False, 
-              save_dir="data", task="LoS/NLoS Classification",
+              save_dir="../downstream_cache", task="LoS/NLoS Classification",
               n_beams=64, o1_bs_idx=[4]):
     
     os.makedirs(save_dir, exist_ok=True)
