@@ -1,5 +1,5 @@
 
----------------------------- training Details ----------------------------
+---------------------------- training Details weights = 512_100model1_1----------------------------
 Dataset Size: 519636, shape: torch.Size([519636, 128])
 epochs: 30, batch size: 32, input type: cls_emb
 task: Beam Prediction
@@ -15,7 +15,7 @@ Split Ratio: 0.2 | Test Accuracy: 78.71% | Test F1: 0.7823
 
 Split Ratio: 0.4 | Test Accuracy: 80.61% | Test F1: 0.8021
 
----------------------------- training Details ----------------------------
+---------------------------- training Details weigts = 512_100model1_1----------------------------
 Dataset Size: 519636, shape: torch.Size([519636, 64, 128])
 epochs: 30, batch size: 32, input type: channel_emb
 task: Beam Prediction
@@ -31,7 +31,7 @@ Split Ratio: 0.2 | Test Accuracy: 94.04% | Test F1: 0.9400
 
 Split Ratio: 0.4 | Test Accuracy: 94.85% | Test F1: 0.9480
 
----------------------------- training Details ----------------------------
+---------------------------- training Details weights = 64_100model1_1 ----------------------------
 Dataset Size: 519636, shape: torch.Size([519636, 128])
 epochs: 30, batch size: 32, input type: cls_emb
 task: Beam Prediction
@@ -46,3 +46,35 @@ Split Ratio: 0.1 | Test Accuracy: 67.59% | Test F1: 0.6747
 Split Ratio: 0.2 | Test Accuracy: 70.29% | Test F1: 0.7008
 
 Split Ratio: 0.4 | Test Accuracy: 72.06% | Test F1: 0.7184
+
+(best)---------------------------- training Details wights = 512_25model1_1 ----------------------------
+Dataset Size: 519636, shape: torch.Size([519636, 128])
+epochs: 30, batch size: 32, input type: cls_emb
+task: Beam Prediction
+Split Ratio: 0.005 | Test Accuracy: 56.96% | Test F1: 0.5594
+
+Split Ratio: 0.01 | Test Accuracy: 63.04% | Test F1: 0.6201
+
+Split Ratio: 0.05 | Test Accuracy: 75.44% | Test F1: 0.7504
+
+Split Ratio: 0.1 | Test Accuracy: 78.56% | Test F1: 0.7823
+
+Split Ratio: 0.2 | Test Accuracy: 81.13% | Test F1: 0.8080
+
+Split Ratio: 0.4 | Test Accuracy: 82.27% | Test F1: 0.8203
+
+(best)---------------------------- training Details weights = 512_25model1_1 ----------------------------
+Dataset Size: 519636, shape: torch.Size([519636, 64, 128])
+epochs: 30, batch size: 32, input type: channel_emb
+task: Beam Prediction
+Split Ratio: 0.005 | Test Accuracy: 74.92% | Test F1: 0.7444
+
+Split Ratio: 0.01 | Test Accuracy: 81.10% | Test F1: 0.8086
+
+Split Ratio: 0.05 | Test Accuracy: 90.28% | Test F1: 0.9022
+
+Split Ratio: 0.1 | Test Accuracy: 92.23% | Test F1: 0.9218
+
+Split Ratio: 0.2 | Test Accuracy: 93.60% | Test F1: 0.9359
+
+Split Ratio: 0.4 | Test Accuracy: 94.41% | Test F1: 0.9438

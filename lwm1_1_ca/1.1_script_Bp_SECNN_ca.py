@@ -32,7 +32,7 @@ print("Using",device)
 #######SELECT INPUT##############################################
 # choose one: 'cls_emb', 'channel_emb', or 'raw'
 input_types = ['cls_emb', 'channel_emb', 'raw']
-selected_input_type = input_types[0] 
+selected_input_type = input_types[1] 
 ################Select Tasks#####################################
 tasks = ['LoS/NLoS Classification', 'Beam Prediction']
 task = tasks[1] # Choose 0 for LoS/NLoS labels or 1 for beam prediction labels.
@@ -81,7 +81,7 @@ gpu_ids = [0]
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = LWM11WithPrepatchCA(gen_raw=True).to(device)
 
-model_name = "64model1_1_weights_ca_e2e.pth"
+model_name = "model1_1_weights_ca_e2e.pth"
 state_dict = torch.load(f"{model_name}", map_location=device) #
 new_state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()} # Remove prefix if it exists
 # also remove 'module.' prefix just in case
