@@ -1,0 +1,145 @@
+"""
+smoke_test.py — Quick verification that lwm_ca imports, runs, and profiles correctly.
+
+Run from the project root with:
+    conda activate lwm_cuda
+    python lwm_ca/smoke_test.py
+"""
+import sys
+import os
+
+# Make sure project root is on path
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, ROOT)
+
+import torch
+import torch.nn as nn
+
+print("=" * 55)
+print("  lwm_ca Smoke Test & Profiler")
+print("=" * 55)
+
+# ── Test 1: CoordAtt ─────────────────────────────────────
+print("\n[1] CoordAtt ...")
+from lwm_ca.coordatt import CoordAtt
+
+ca = CoordAtt(2, 2, reduction=32)
+x = torch.randn(4, 2, 32, 32)
+y = ca(x)
+assert y.shape == x.shape, f"shape mismatch: {y.shape}"
+print(f"  ✓ CoordAtt(4,2,32,32) → {tuple(y.shape)}")
+
+# ── Test 2: Pipeline helpers ──────────────────────────────
+print("\n[2] Pipeline helpers ...")
+from lwm_ca.torch_pipeline import (
+    ensure_ri_channels,
+    add_complex_noise_ri,
+    channels_to_patches,
+    mask_patches,
+)
+
+ri = torch.randn(4, 2, 32, 32)
+
+noisy = add_complex_noise_ri(ri, snr_db=20.0)
+assert noisy.shape == ri.shape
+print(f"  ✓ add_complex_noise_ri → {tuple(noisy.shape)}")
+
+# Patch size for lwm1.0 is often 16
+patches = channels_to_patches(ri, patch_size=16)
+# (4, 2, 32, 32) -> flatten to (4, 2, 1024) -> concat to (4, 2048) -> reshape to (4, 128, 16)
+assert patches.shape == (4, 128, 16), f"Got {patches.shape}"
+print(f"  ✓ channels_to_patches  → {tuple(patches.shape)}")
+
+input_ids, masked_tokens, masked_pos = mask_patches(patches, mask_ratio=0.15)
+print(f"  ✓ mask_patches         → input_ids={tuple(input_ids.shape)}, masked={tuple(masked_tokens.shape)}")
+
+# Verify ensure_ri_channels handles several input types
+for shape, desc in [
+    ((3, 2, 32, 32), "(B,2,H,W)"),
+    ((3, 32, 32),    "(B,H,W)"),
+]:
+    t = torch.randn(*shape)
+    out = ensure_ri_channels(t)
+    assert out.shape[1] == 2, f"Expected 2 channels, got {out.shape}"
+    print(f"  ✓ ensure_ri_channels({desc}) → {tuple(out.shape)}")
+
+# ── Test 3: Full model forward + backward ─────────────────
+print("\n[3] LWMWithPrepatchCA full forward + backward ...")
+from lwm_ca.torch_pipeline import LWMWithPrepatchCA
+
+model = LWMWithPrepatchCA(gen_raw=False, snr_db=None)
+n_params = sum(p.numel() for p in model.parameters())
+print(f"  ✓ Model built — {n_params:,} parameters")
+
+x = torch.randn(2, 2, 32, 32)
+logits, mt, output = model(x)
+print(f"  ✓ logits        : {tuple(logits.shape)}")
+print(f"  ✓ masked_tokens : {tuple(mt.shape)}")
+print(f"  ✓ encoder output: {tuple(output.shape)}")
+
+loss = nn.MSELoss()(logits, mt) / torch.var(mt)
+loss.backward()
+print(f"  ✓ MCM loss = {loss.item():.5f}  |  backward() OK")
+
+# ── Test 4: gen_raw (no masking) ─────────────────────────
+print("\n[4] gen_raw=True (inference mode, no masking) ...")
+model_raw = LWMWithPrepatchCA(gen_raw=True)
+with torch.no_grad():
+    logits_r, mt_r, out_r = model_raw(x)
+print(f"  ✓ logits={tuple(logits_r.shape)}, output={tuple(out_r.shape)}")
+
+# ── Test 5: Package __init__ exports ─────────────────────
+print("\n[5] Package __init__ exports ...")
+from lwm_ca import CoordAtt, LWMWithPrepatchCA  # noqa
+print("  ✓ CoordAtt, LWMWithPrepatchCA importable from lwm_ca")
+
+# ── Test 6: Architecture Summary & FLOPs Profiling ───────
+print("\n[6] Architecture Summary & FLOPs Profiling ...")
+try:
+    from torchinfo import summary
+    from thop import profile
+    import colorama
+    from colorama import Fore, Style
+    
+    colorama.init(autoreset=True)
+    
+    # Initialize model in strict inference mode
+    profiling_model = LWMWithPrepatchCA(gen_raw=True).eval()
+    
+    # CRITICAL: Batch Size = 1 for industry standard inference metric
+    # Use CUDA if available, otherwise fallback to CPU
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    profiling_model.to(device)
+    dummy_input = torch.randn(1, 2, 32, 32).to(device) 
+
+    print(f"\n{Fore.YELLOW}--- Torchinfo Architecture Summary ---")
+    summary(
+        profiling_model,
+        input_data=dummy_input,
+        verbose=1,
+        col_names=["input_size", "output_size", "num_params"],
+        device=device
+    )
+
+    print(f"\n{Fore.YELLOW}--- THOP FLOPs & Params Profiling ---")
+    # thop profile automatically counts the operations
+    flops, params = profile(
+        profiling_model,
+        inputs=(dummy_input,),
+        verbose=False
+    )
+
+    # Convert to standard units: Millions (1e6) and Billions/Giga (1e9)
+    print(f"{Fore.MAGENTA}- Total FLOPs (BS=1): {Fore.CYAN}{flops/1e6:.2f} MFLOPs {Style.DIM}({(flops/1e9):.4f} GFLOPs){Style.RESET_ALL}")
+    print(f"{Fore.MAGENTA}- Total Parameters:   {Fore.CYAN}{params/1e6:.3f} M{Style.RESET_ALL}")
+    print("  ✓ Profiling successful.")
+
+except ImportError as e:
+    print("  [Skipping] Missing library for profiling.")
+    print("  Run: `pip install torchinfo thop colorama` to enable Test 6.")
+    print(f"  Error details: {e}")
+
+print()
+print("=" * 55)
+print("  All tests PASSED ✓")
+print("=" * 55)

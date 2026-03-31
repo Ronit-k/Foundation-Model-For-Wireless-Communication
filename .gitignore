@@ -8,3 +8,5 @@ downstream_cache
 
 **/lwm1_1/__pycache__/
 **/lwm1_1_ca/__pycache__/
+**/mask_aware_tf/__pycache__/
+**/mask_aware_tf/MAT
