@@ -10,13 +10,13 @@
 #   • MCM MSE loss on 16-length masked patches
 #
 # Usage (from project root):
-#   python -m mask_aware_tf.pretrain_pseudo [options]
+#   python -m mask_aware_tf_heavy.pretrain_pseudo [options]
 #
 # Quick start:
-#   python -m mask_aware_tf.pretrain_pseudo \
+#   python -m mask_aware_tf_heavy.pretrain_pseudo \
 #       --epochs 100 \
 #       --batch-size 64 \
-#       --save-path mask_aware_tf/mat_pseudo_lwm_weights.pth
+#       --save-path mask_aware_tf_heavy/mat_pseudo_lwm_weights.pth
 # =============================================================================
 
 import argparse
@@ -45,7 +45,7 @@ except Exception:
     torch_amp = None
 
 from lwm.input_preprocess import DeepMIMO_data_gen, deepmimo_data_cleaning
-from mask_aware_tf.mat_pseudo_lwm import MATPseudoLWM
+from mask_aware_tf_heavy.mat_pseudo_lwm import MATPseudoLWM
 
 
 # =============================================================================
@@ -104,7 +104,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scheduler-step-per-batch",
                         action=argparse.BooleanOptionalAction, default=False)
 
-    parser.add_argument("--save-path",  type=str, default="mask_aware_tf/mat_pseudo_lwm_weights.pth")
+    parser.add_argument("--save-path",  type=str, default="mask_aware_tf_heavy/mat_pseudo_lwm_weights.pth")
     parser.add_argument("--save-every", type=int, default=0)
 
     return parser.parse_args()
@@ -364,7 +364,7 @@ def main():
 
     log_file = args.log_file
     if log_file is None:
-        base = args.save_path or "mask_aware_tf/pretrain_pseudo"
+        base = args.save_path or "mask_aware_tf_heavy/pretrain_pseudo"
         log_file = os.path.splitext(base)[0] + ".log"
     log_file = os.path.expanduser(log_file)
     log_dir = os.path.dirname(log_file)

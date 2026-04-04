@@ -90,6 +90,52 @@ print(f"  ✓ logits={tuple(logits_r.shape)}, output={tuple(out_r.shape)}")
 print("\n[5] Package __init__ exports ...")
 from lwm1_1_ca import CoordAtt, LWM11WithPrepatchCA  # noqa
 print("  ✓ CoordAtt, LWM11WithPrepatchCA importable from lwm1_1_ca")
+    
+# ── Test 6: Architecture Summary & FLOPs Profiling ───────
+print("\n[6] Architecture Summary & FLOPs Profiling ...")
+try:
+    from torchinfo import summary
+    from thop import profile
+    import colorama
+    from colorama import Fore, Style
+    
+    colorama.init(autoreset=True)
+    
+    # Initialize model in strict inference mode
+    profiling_model = LWM11WithPrepatchCA(gen_raw=True).eval()
+    
+    # CRITICAL: Batch Size = 1 for industry standard inference metric
+    # Use CUDA if available, otherwise fallback to CPU
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    profiling_model.to(device)
+    dummy_input = torch.randn(1, 2, 32, 32).to(device) 
+
+    print(f"\n{Fore.YELLOW}--- Torchinfo Architecture Summary ---")
+    summary(
+        profiling_model,
+        input_data=dummy_input,
+        verbose=1,
+        col_names=["input_size", "output_size", "num_params"],
+        device=device
+    )
+
+    print(f"\n{Fore.YELLOW}--- THOP FLOPs & Params Profiling ---")
+    # thop profile automatically counts the operations
+    flops, params = profile(
+        profiling_model,
+        inputs=(dummy_input,),
+        verbose=False
+    )
+
+    # Convert to standard units: Millions (1e6) and Billions/Giga (1e9)
+    print(f"{Fore.MAGENTA}- Total FLOPs (BS=1): {Fore.CYAN}{flops/1e6:.2f} MFLOPs {Style.DIM}({(flops/1e9):.4f} GFLOPs){Style.RESET_ALL}")
+    print(f"{Fore.MAGENTA}- Total Parameters:   {Fore.CYAN}{params/1e6:.3f} M{Style.RESET_ALL}")
+    print("  ✓ Profiling successful.")
+
+except ImportError as e:
+    print("  [Skipping] Missing library for profiling.")
+    print("  Run: `pip install torchinfo thop colorama` to enable Test 6.")
+    print(f"  Error details: {e}")
 
 print()
 print("=" * 55)
