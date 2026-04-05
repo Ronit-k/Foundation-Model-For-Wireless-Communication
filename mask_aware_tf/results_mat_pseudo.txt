@@ -15,3 +15,22 @@ Split Ratio: 0.1 | Test Accuracy: 80.90% | Test F1: 0.8067
 Split Ratio: 0.2 | Test Accuracy: 82.46% | Test F1: 0.8218
 
 Split Ratio: 0.4 | Test Accuracy: 83.82% | Test F1: 0.8370
+
+
+
+---------------------------- training Details ----------------------------
+Model: MAT-PSEUDO-LWM (light)
+Dataset Size: 519636, shape: torch.Size([519636, 128, 64])
+epochs: 30, batch size: 32, input type: channel_emb
+task: Beam Prediction
+Split Ratio: 0.005 | Test Accuracy: 81.15% | Test F1: 0.8074
+
+Split Ratio: 0.01 | Test Accuracy: 85.76% | Test F1: 0.8551
+
+Split Ratio: 0.05 | Test Accuracy: 91.79% | Test F1: 0.9174
+
+Split Ratio: 0.1 | Test Accuracy: 93.20% | Test F1: 0.9316
+
+Split Ratio: 0.2 | Test Accuracy: 94.39% | Test F1: 0.9437
+
+Split Ratio: 0.4 | Test Accuracy: 95.23% | Test F1: 0.9520
