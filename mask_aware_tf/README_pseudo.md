@@ -37,7 +37,7 @@ Input (B, 2, 32, 32)         ← Real + Imaginary channels
    torch.gather(masked_pos)              Inference Only:
    → (B, n_masks, 64)                  ┌──────┴──────┐
    → Linear(64→16)                  GAP→(B,64)    (B,128,64)
-   → (B, n_masks, 16)            CLS embedding  Channel emb
+   → (B, n_masks, 16)            CLS embedding  Channel embedding
    │
    MSE Loss vs raw patches
 ```

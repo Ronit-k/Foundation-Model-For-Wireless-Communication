@@ -210,14 +210,14 @@ def get_data_loaders(data_tensor, labels_tensor, batch_size, train_ratio):
 # Mapping for beam prediction input types — MAT models use d_model=64
 if model_choice == 'pseudo':
     mapping = {
-        'cls_emb': {'input_channels': 1, 'sequence_length': 64},      # CLS dim = 64
-        'channel_emb': {'input_channels': 128, 'sequence_length': 64}, # (B, 128, 64)
+        'cls_emb': {'input_channels': 1, 'sequence_length': 64},       # CLS dim = 64
+        'channel_emb': {'input_channels': 64, 'sequence_length': 128}, # (B, 128, 64) -> [B, L, C]
         'raw': {'input_channels': 16, 'sequence_length': 128}          # (B, 128, 16) raw patches
     }
 elif model_choice == 'vit':
     mapping = {
-        'cls_emb': {'input_channels': 1, 'sequence_length': 64},      # CLS dim = 64
-        'channel_emb': {'input_channels': 128, 'sequence_length': 64}, # (B, 128, 64)
+        'cls_emb': {'input_channels': 1, 'sequence_length': 64},       # CLS dim = 64
+        'channel_emb': {'input_channels': 64, 'sequence_length': 128}, # (B, 128, 64) -> [B, L, C]
         'raw': {'input_channels': 64, 'sequence_length': 1024}         # (B, 1024, 64) from proj_in
     }
 
