@@ -31,8 +31,9 @@ print("Using", device)
 
 #######SELECT MODEL##############################################
 # choose one: 'vit' or 'pseudo'
+mdl = int(input("choose model 0 for MAT-ViT, 1 for MAT-Pseudo: "))
 model_choices = ['vit', 'pseudo']
-model_choice = model_choices[0]  # Change index to select model
+model_choice = model_choices[mdl]  # Change index to select model
 
 #######SELECT INPUT##############################################
 # choose one: 'cls_emb', 'channel_emb', or 'raw'
@@ -89,13 +90,13 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 if model_choice == 'vit':
     from mask_aware_tf.mat_vit_lwm import MATViTLWM
     model = MATViTLWM(gen_raw=True).to(device)
-    model_name = "64_100mat_vit_lwm_weights.pth"
+    model_name = "512_100mat_vit_lwm_weights.pth"
     results_file = "results_mat_vit.txt"
     photo_prefix = "vit"
 elif model_choice == 'pseudo':
     from mask_aware_tf.mat_pseudo_lwm import MATPseudoLWM
     model = MATPseudoLWM(gen_raw=True).to(device)
-    model_name = "64_100mat_pseudo_lwm_weights.pth"
+    model_name = "512_100mat_pseudo_lwm_weights.pth"
     results_file = "results_mat_pseudo.txt"
     photo_prefix = "pseudo"
 else:
