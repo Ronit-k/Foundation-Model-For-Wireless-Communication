@@ -16,11 +16,11 @@ Input (B, 2, 32, 32)         ← Real + Imaginary channels
    │  (B, 1, 32, 32)   │
    └────────────────────┘
          │
-   ┌─ 3 MAT Stages Body ─┐
-   │  Stage 1 (3 ATB+Conv) │    ← WindowMHA + mask validity update
-   │  Stage 2 (3 ATB+Conv) │    ← Middle ATB has shifted windows
-   │  Stage 3 (3 ATB+Conv) │    ← Standard windows
-   └───────────────────────┘
+   ┌─ 3 MAT Stages Body (LayerScaled) ─┐
+   │  Stage 1 (3 ATB+Conv)          │    ← WindowMHA + LayerScale (γ=1e-4)
+   │  Stage 2 (3 ATB+Conv)          │    ← Shifted windows + LayerScale
+   │  Stage 3 (3 ATB+Conv)          │    ← Standard windows + LayerScale
+   └───────────────────────────────────┘
          │
    (B, 64, 32, 32)           ← MAT output features
          │
@@ -46,9 +46,9 @@ Each **Adjusted Transformer Block (ATB)** contains:
    the channel dimension, then fused via a 1×1 convolution.
 
 3. **MLP** — A two-layer feedforward network (1×1 Conv → GELU → 1×1 Conv) with
-   a residual connection.
+   a **LayerScale (γ=1e-4)** residual connection to prevent cascading variance.
 
-4. **Local Conv** — A 3×3 convolution with residual connection to capture local
+4. **Local Conv** — A 3×3 convolution with a **LayerScale** residual connection to capture local
    spatial patterns the windowed attention may miss.
 
 ### Multi-Scale Window Strategy
@@ -73,16 +73,23 @@ After Stage 1, the validity mask is relaxed via max-pooling over Stage 2's
 tokens in that window become valid. This allows the larger Stage 2 windows
 to attend to reconstructed features from Stage 1.
 
-## Deeper Architecture: MATStage
+## Deeper Architecture: MATStage & The LayerScale Imperative
 
-To match the 12-layer depth of the original Large Wireless Model (LWM), the model utilizes 3 full `MATStage` modules. Each `MATStage` contains:
+To match the 12-layer depth of the original Large Wireless Model (LWM), the model utilizes 3 full `MATStage` modules. Each `MATStage` evaluates:
+1. 3 sequential ATBs (yielding 9 ATBs total across the network).
+2. The middle ATB of each stage utilizes shifted windows (`shift=True`) for cross-window communication.
+3. A `3x3` localized convolutional layer mapping wrapping the final ATB block.
+4. A macroscopic residual logic connecting the identity wrapper to the end feature transformation.
 
-1. 3 sequential ATBs (yielding 9 ATBs total).
-2. The middle ATB of each stage uses shifted windows (`shift=True`) for cross-window communication.
-3. A `3x3` localized convolutional layer wrapping the block.
-4. A macro skip-connection connecting the start and end of the stage.
+### The No-LayerNorm LayerScale Stabilization Protocol
+In standard deep architectures (ViTs/ResNets), data passing heavily through 9 sequential Transformer blocks would accumulate cascading variance, leading rapidly to catastrophic gradient explosion (NaNs/Loss in the millions). This is classically countered using `LayerNorm` buffers.
+However, **normalization layers strictly average statistical data over the token sequence**. In a Masked Image Modeling regime, averaging visible pixels inherently mathematically leaks the position and relative absence of the missing (`0`) pixels—destroying the entire self-supervised reconstruction objective.
 
-This gives the model the parameter depth required to rival the original LWM while retaining MAT's 2D dynamic noise-filtering.
+To counter this, **LayerScale** is strictly applied across the entire network body:
+- **Zero Leakage:** Instead of averaging tokens across the spatial grid, each branch connection (`mlp`, `local_conv`, and `stage_conv`) is multiplied exclusively by a fixed, uniquely learnable scalar parameter `gamma`. Pixel A computes itself mathematically completely blind to the presence of an empty Pixel B. 
+- **Exploding Gradient Nullification:** Every `gamma` is forcefully initialized directly to `1e-4` scale. This aggressively chokes the starting residual contribution, essentially compelling the deep 9-layer `Heavy_MAT` model to strictly feign a completely safe and shallow sub-network at Epoch 0. As convergence aligns smoothly over descending epochs, the model gently trains the `gamma` scales up to introduce deeper representation fidelity.
+ 
+This gives the model the parameter depth required to natively rival the original LWM while retaining MAT's 2D dynamic noise-filtering and completely eliminating explosive loss.
 
 ## Why MSE Loss (Not GAN/VGG Perceptual)
 

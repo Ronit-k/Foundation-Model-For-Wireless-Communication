@@ -23,11 +23,11 @@ Input (B, 2, 32, 32)         ← Real + Imaginary channels
    │ mask → (B,1,8,16)   │
    └──────────────────────┘
          │
-   ┌─ 3 MAT Stages Body ──┐
-   │  Stage 1 (3 ATB+Conv) │   ← Mask-aware + validity update
-   │  Stage 2 (3 ATB+Conv) │   ← Middle ATB has shifted windows
-   │  Stage 3 (3 ATB+Conv) │   ← Standard windows
-   └──────────────────────┘
+   ┌─ 3 MAT Stages Body (LayerScaled) ─┐
+   │  Stage 1 (3 ATB+Conv)          │   ← Mask-aware + LayerScale (γ=1e-4)
+   │  Stage 2 (3 ATB+Conv)          │   ← Shifted windows + LayerScale
+   │  Stage 3 (3 ATB+Conv)          │   ← Standard windows + LayerScale
+   └───────────────────────────────────┘
          │
    Reverse 2D Bridge         ← (B,64,8,16) → (B,128,64)
    (B, 128, 64)
@@ -70,14 +70,22 @@ With 4×4 windows:
 - Shifted windows (offset by 2) within `MATStage` create 8 new cross-boundary windows
 - 16 tokens per window is computationally efficient
 
-## Deeper Architecture: MATStage
-To rival the depth of the original 12-layer LWM, the model utilizes 3 full `MATStage` modules. Each `MATStage` contains:
-1. 3 sequential ATBs (yielding 9 ATBs total).
-2. The middle ATB of each stage uses shifted windows (`shift=True`) for cross-window communication.
-3. A `3x3` localized convolutional layer wrapping the block.
-4. A macro skip-connection connecting the start and end of the stage.
+## Deeper Architecture: MATStage & The LayerScale Imperative
+To rival the depth of the original 12-layer LWM, the model utilizes 3 full `MATStage` modules. Each `MATStage` evaluates:
+1. 3 sequential ATBs (yielding 9 ATBs total across the network).
+2. The middle ATB of each stage utilizes shifted windows (`shift=True`) for cross-window communication.
+3. A `3x3` localized convolutional layer mapping wrapping the final ATB block.
+4. A macroscopic residual logic connecting the identity wrapper to the end feature transformation.
 
-Despite increasing from 3 to 9 total Transformer blocks, the 16-length patch tokenization keeps the FLOP count highly efficient (approx ~113 MFLOPs) compared to Method 1, making it the ideal deep model for edge deployment.
+### The No-LayerNorm LayerScale Stabilization Protocol
+In standard deep architectures (ViTs/ResNets), data passing heavily through 9 sequential Transformer blocks would accumulate cascading variance, leading rapidly to catastrophic gradient explosion (NaNs/Loss in the millions). This is classically countered using `LayerNorm` buffers.
+However, **normalization layers strictly average statistical data over the token sequence**. In a Masked Image Modeling regime, averaging visible tokens inherently mathematically leaks the position and relative absence of the missing (`0`) tokens—destroying the entire self-supervised reconstruction objective.
+
+To counter this, **LayerScale** is strictly applied across the entire network body:
+- **Zero Leakage:** Instead of averaging tokens across the spatial grid, each branch connection (`mlp`, `local_conv`, and `stage_conv`) multiplied exclusively by a fixed, uniquely learnable scalar parameter `gamma`. Token A computes itself mathematically completely blind to the presence of Token B. 
+- **Exploding Gradient Nullification:** Every `gamma` is forcefully initialized directly to `1e-4` scale. This aggressively chokes the starting residual contribution, essentially compelling the deep 9-layer `Heavy_MAT` model to strictly feign a completely safe and shallow sub-network at Epoch 0. As convergence aligns smoothly over descending epochs, the model gently trains the `gamma` scales up to introduce deeper representation fidelity.
+ 
+Despite increasing from 3 to 9 total Transformer blocks, the 16-length patch tokenization keeps the FLOP count highly efficient (approx ~113 MFLOPs) compared to Method 1, making it the mathematically stable, optimal edge framework.
 
 ## Decoding & Loss
 

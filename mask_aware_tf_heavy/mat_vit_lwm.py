@@ -153,11 +153,12 @@ class ATB(nn.Module):
     """
     Adjusted Transformer Block: attention → concat → 1×1 FC → MLP + local conv.
 
-    No LayerNorm is used, following the user specification and the original
-    MAT design for inpainting where BN/LN can leak mask information.
+    No LayerNorm is used to prevent mask leakage.
+    Instead, LayerScale is explicitly incorporated to prevent gradient/variance explosion
+    across deep networks.
     """
 
-    def __init__(self, dim: int, heads: int = 4, win: int = 4):
+    def __init__(self, dim: int, heads: int = 4, win: int = 4, init_values: float = 1e-4):
         super().__init__()
         self.attn = WindowMHA(dim, heads=heads, win=win)
         self.fc = nn.Conv2d(dim * 2, dim, 1)                 # fuse concat
@@ -167,6 +168,8 @@ class ATB(nn.Module):
             nn.Conv2d(dim * 3, dim, 1),
         )
         self.local_conv = nn.Conv2d(dim, dim, 3, padding=1)   # local context
+        self.gamma_mlp = nn.Parameter(init_values * torch.ones(1, dim, 1, 1))
+        self.gamma_conv = nn.Parameter(init_values * torch.ones(1, dim, 1, 1))
 
     def forward(self, x: torch.Tensor, valid_mask: torch.Tensor,
                 shift: bool = False) -> torch.Tensor:
@@ -182,8 +185,8 @@ class ATB(nn.Module):
         a = self.attn(x, valid_mask, shift=shift)
         x = torch.cat([x, a], dim=1)                          # channel concat
         x = self.fc(x)                                        # fuse
-        x = x + self.mlp(x)                                   # feedforward
-        x = x + self.local_conv(x)                             # local branch
+        x = x + self.gamma_mlp * self.mlp(x)                                   # feedforward
+        x = x + self.gamma_conv * self.local_conv(x)                             # local branch
         return x
 
 
@@ -193,16 +196,16 @@ class ATB(nn.Module):
 
 class MATStage(nn.Module):
     """
-    MAT Stage containing 3 ATBs and a localized 3x3 Conv2d, wrapped in a
-    residual connection. This increases the depth to match the original
-    Large Wireless Model (LWM) architecture.
+    MAT Stage containing 3 ATBs and a localized 3x3 Conv2d, wrapped in a LayerScaled
+    residual connection. This prevents exponential variance explosion across deep features.
     """
-    def __init__(self, dim: int, heads: int = 4, win: int = 4):
+    def __init__(self, dim: int, heads: int = 4, win: int = 4, init_values: float = 1e-4):
         super().__init__()
-        self.block1 = ATB(dim, heads=heads, win=win)
-        self.block2 = ATB(dim, heads=heads, win=win)
-        self.block3 = ATB(dim, heads=heads, win=win)
+        self.block1 = ATB(dim, heads=heads, win=win, init_values=init_values)
+        self.block2 = ATB(dim, heads=heads, win=win, init_values=init_values)
+        self.block3 = ATB(dim, heads=heads, win=win, init_values=init_values)
         self.conv = nn.Conv2d(dim, dim, 3, padding=1)
+        self.gamma_stage = nn.Parameter(init_values * torch.ones(1, dim, 1, 1))
 
     def forward(self, x: torch.Tensor, valid_mask: torch.Tensor,
                 shift: bool = False) -> torch.Tensor:
@@ -217,7 +220,7 @@ class MATStage(nn.Module):
         x = self.block2(x, valid_mask, shift=shift)
         x = self.block3(x, valid_mask, shift=False)
         x = self.conv(x)
-        return x + identity
+        return identity + self.gamma_stage * x
 
 
 # =============================================================================
