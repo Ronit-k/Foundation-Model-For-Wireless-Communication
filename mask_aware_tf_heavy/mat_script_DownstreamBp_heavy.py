@@ -35,10 +35,14 @@ mdl = int(input("choose model 0 for MAT-ViT, 1 for MAT-Pseudo: "))
 model_choices = ['vit', 'pseudo']
 model_choice = model_choices[mdl]  # Change index to select model
 
+down_mdl = int(input("choose downstream model 0 for SECNN, 1 for ResCNN: "))
+down_choices = ['secnn', 'rescnn']
+down_choice = down_choices[down_mdl]
+
 #######SELECT INPUT##############################################
 # choose one: 'cls_emb', 'channel_emb', or 'raw'
 input_types = ['cls_emb', 'channel_emb', 'raw']
-selected_input_type = input_types[0]
+selected_input_type = input_types[1]
 ################Select Tasks#####################################
 tasks = ['LoS/NLoS Classification', 'Beam Prediction']
 task = tasks[1] # Choose 0 for LoS/NLoS labels or 1 for beam prediction labels.
@@ -46,7 +50,7 @@ num_epochs = 30
 batch_size = 32  # Set a value (adjust as needed)
 print(
     "---------------------------- training Details ----------------------------\n"
-    f"Model: MAT-{model_choice.upper()}-LWM (light)\n"
+    f"Model: MAT-{model_choice.upper()}-LWM ({down_choice}_heavy)\n"
     f"epochs: {num_epochs}, "
     f"batch size: {batch_size}, "
     f"input type: {selected_input_type}\n"
@@ -88,28 +92,34 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # --- Model selection ---
 if model_choice == 'vit':
-    from mask_aware_tf.mat_vit_lwm import MATViTLWM
+    from mask_aware_tf_heavy.mat_vit_lwm import MATViTLWM
     model = MATViTLWM(gen_raw=True).to(device)
     model_name = "512_100mat_vit_lwm_weights.pth"
-    results_file = "results_mat_vit.txt"
+    results_file = "results_mat_vit_heavy.txt"
     photo_prefix = "vit"
 elif model_choice == 'pseudo':
-    from mask_aware_tf.mat_pseudo_lwm import MATPseudoLWM
+    from mask_aware_tf_heavy.mat_pseudo_lwm import MATPseudoLWM
     model = MATPseudoLWM(gen_raw=True).to(device)
     model_name = "512_100mat_pseudo_lwm_weights.pth"
-    results_file = "results_mat_pseudo.txt"
+    results_file = "results_mat_pseudo_heavy.txt"
     photo_prefix = "pseudo"
 else:
     raise ValueError(f"Unknown model_choice: {model_choice}. Use 'vit' or 'pseudo'.")
 
-state_dict = torch.load(f"{model_name}", map_location=device)
-new_state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()}
-new_state_dict = {k.replace("module.", ""): v for k, v in new_state_dict.items()}
-model.load_state_dict(new_state_dict, strict=True)
+# Load weights — heavy models may not have pretrained weights yet
+try:
+    state_dict = torch.load(f"{model_name}", map_location=device)
+    new_state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()}
+    new_state_dict = {k.replace("module.", ""): v for k, v in new_state_dict.items()}
+    model.load_state_dict(new_state_dict, strict=True)
+    print(f"Model [{model_choice}] weights loaded successfully on {device}")
+except FileNotFoundError:
+    print(f"WARNING: Weight file '{model_name}' not found. Using randomly initialized model.")
+    print("Run pretraining first to generate weights for the heavy variant.")
 
 lwm_model = model
 lwm_model.eval()
-print(f"Model [{model_choice}] loaded successfully on {device}")
+print(f"Model [{model_choice}] ready on {device}")
 
 # %%
 N = raw_chs.shape[0]
@@ -128,7 +138,7 @@ def get_embeddings_mat(mat_model, channels_ri, input_type, model_choice, device,
             batch = batch.to(device)
             if input_type == "raw":
                 if model_choice == 'pseudo':
-                    from mask_aware_tf.mat_pseudo_lwm import channels_to_patches
+                    from mask_aware_tf_heavy.mat_pseudo_lwm import channels_to_patches
                     patches = channels_to_patches(batch)  # (B, 128, 16)
                     all_embs.append(patches.cpu())
                 else:
@@ -155,7 +165,7 @@ torch.cuda.empty_cache()
 # Initial log (Header)
 message = (
     "---------------------------- training Details ----------------------------\n"
-    f"Model: MAT-{model_choice.upper()}-LWM (light)\n"
+    f"Model: MAT-{model_choice.upper()}-LWM ({down_choice}_heavy)\n"
     f"Dataset Size: {len(dataset)}, shape: {dataset.shape}\n"
     f"epochs: {num_epochs}, "
     f"batch size: {batch_size}, "
@@ -210,14 +220,14 @@ def get_data_loaders(data_tensor, labels_tensor, batch_size, train_ratio):
 # Mapping for beam prediction input types — MAT models use d_model=64
 if model_choice == 'pseudo':
     mapping = {
-        'cls_emb': {'input_channels': 1, 'sequence_length': 64},       # CLS dim = 64
-        'channel_emb': {'input_channels': 64, 'sequence_length': 128}, # (B, 128, 64) -> [B, L, C]
+        'cls_emb': {'input_channels': 1, 'sequence_length': 64},      # CLS dim = 64
+        'channel_emb': {'input_channels': 128, 'sequence_length': 64}, # (B, 128, 64)
         'raw': {'input_channels': 16, 'sequence_length': 128}          # (B, 128, 16) raw patches
     }
 elif model_choice == 'vit':
     mapping = {
-        'cls_emb': {'input_channels': 1, 'sequence_length': 64},       # CLS dim = 64
-        'channel_emb': {'input_channels': 64, 'sequence_length': 128}, # (B, 128, 64) -> [B, L, C]
+        'cls_emb': {'input_channels': 1, 'sequence_length': 64},      # CLS dim = 64
+        'channel_emb': {'input_channels': 128, 'sequence_length': 64}, # (B, 128, 64)
         'raw': {'input_channels': 64, 'sequence_length': 1024}         # (B, 1024, 64) from proj_in
     }
 
@@ -350,9 +360,77 @@ class SEResNet1D(nn.Module):
 
 print("Final SE-ResNet1D Model Defined.")
 
+# ----------------------------------
+# 4. BASE RESCNN DOWNSTREAM MODEL
+# ----------------------------------
+class BaseResidualBlock(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(BaseResidualBlock, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm1d(out_channels)
+        self.shortcut = nn.Sequential()
+        if in_channels != out_channels:
+            self.shortcut = nn.Sequential(
+                nn.Conv1d(in_channels, out_channels, kernel_size=1),
+                nn.BatchNorm1d(out_channels)
+            )
+
+    def forward(self, x):
+        residual = x
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.bn2(self.conv2(x))
+        x += self.shortcut(residual)
+        x = F.relu(x)
+        return x
+
+class Res1DCNN(nn.Module):
+    def __init__(self, input_channels, sequence_length, num_classes):
+        super(Res1DCNN, self).__init__()
+        self.conv1 = nn.Conv1d(input_channels, 32, kernel_size=7, stride=2, padding=3)
+        self.bn1 = nn.BatchNorm1d(32)
+        self.maxpool = nn.MaxPool1d(kernel_size=3, stride=2, padding=1)
+        self.layer1 = self._make_layer(32, 32, 2)
+        self.layer2 = self._make_layer(32, 64, 3)
+        self.layer3 = self._make_layer(64, 128, 4)
+        with torch.no_grad():
+            dummy_input = torch.zeros(1, input_channels, sequence_length)
+            dummy_output = self.compute_conv_output(dummy_input)
+            self.flatten_size = dummy_output.numel()
+        self.fc1 = nn.Linear(self.flatten_size, 128)
+        self.bn_fc1 = nn.BatchNorm1d(128)
+        self.fc2 = nn.Linear(128, num_classes)
+        self.dropout = nn.Dropout(0.5)
+
+    def _make_layer(self, in_channels, out_channels, num_blocks):
+        layers = [BaseResidualBlock(in_channels, out_channels)]
+        for _ in range(1, num_blocks):
+            layers.append(BaseResidualBlock(out_channels, out_channels))
+        return nn.Sequential(*layers)
+
+    def compute_conv_output(self, x):
+        x = self.maxpool(F.relu(self.bn1(self.conv1(x))))
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = F.adaptive_avg_pool1d(x, 1)
+        return x
+
+    def forward(self, x):
+        x = x.transpose(1, 2)
+        x = self.compute_conv_output(x)
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.bn_fc1(self.fc1(x)))
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x
+
+print("Base Res1DCNN Model Defined.")
+
 
 # ----------------------------------
-# 4. LABEL SMOOTHING LOSS
+# 5. LABEL SMOOTHING LOSS
 # ----------------------------------
 class LabelSmoothingLoss(nn.Module):
     def __init__(self, classes, smoothing=0.1, dim=-1):
@@ -398,7 +476,7 @@ def plot_training_metrics(epochs, train_losses, val_losses, val_f1_scores, save_
 
 # %%
 # Create photo directories
-photo_dir = os.path.join(os.path.dirname(__file__), "photos", f"{photo_prefix}_{selected_input_type}")
+photo_dir = os.path.join(os.path.dirname(__file__), "photos", f"{photo_prefix}_{down_choice}_heavy_{selected_input_type}")
 os.makedirs(photo_dir, exist_ok=True)
 
 # %%
@@ -409,7 +487,10 @@ for split_ratio in split_ratios:
     print(f"\n--- Starting training for split ratio: {split_ratio} ---")
 
     # Instantiate the model FRESH for every split ratio (train from scratch)
-    beam_model = SEResNet1D(params['input_channels'], params['sequence_length'], num_classes).to(device)
+    if down_choice == 'secnn':
+        beam_model = SEResNet1D(params['input_channels'], params['sequence_length'], num_classes).to(device)
+    else:
+        beam_model = Res1DCNN(params['input_channels'], params['sequence_length'], num_classes).to(device)
     optimizer = Adam(beam_model.parameters(), lr=initial_lr, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer,
         T_0=10,      # Restart every 10 epochs
