@@ -42,7 +42,7 @@ down_choice = down_choices[down_mdl]
 #######SELECT INPUT##############################################
 # choose one: 'cls_emb', 'channel_emb', or 'raw'
 input_types = ['cls_emb', 'channel_emb', 'raw']
-selected_input_type = input_types[1]
+selected_input_type = input_types[0]
 ################Select Tasks#####################################
 tasks = ['LoS/NLoS Classification', 'Beam Prediction']
 task = tasks[1] # Choose 0 for LoS/NLoS labels or 1 for beam prediction labels.
@@ -94,13 +94,13 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 if model_choice == 'vit':
     from mask_aware_tf_heavy.mat_vit_lwm import MATViTLWM
     model = MATViTLWM(gen_raw=True).to(device)
-    model_name = "512_100mat_vit_lwm_weights.pth"
+    model_name = "512_100mat_vit_heavy_lwm_weights.pth"
     results_file = "results_mat_vit_heavy.txt"
     photo_prefix = "vit"
 elif model_choice == 'pseudo':
     from mask_aware_tf_heavy.mat_pseudo_lwm import MATPseudoLWM
     model = MATPseudoLWM(gen_raw=True).to(device)
-    model_name = "512_100mat_pseudo_lwm_weights.pth"
+    model_name = "512_100mat_pseudo_heavy_lwm_weights.pth"
     results_file = "results_mat_pseudo_heavy.txt"
     photo_prefix = "pseudo"
 else:
