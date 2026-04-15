@@ -1,7 +1,8 @@
 # %%
 import os
 import sys
-PROJECT_ROOT = os.path.abspath(os.path.join(os.getcwd(), ".."))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
@@ -87,8 +88,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 from mat_pseudo_lwm_ca.mat_pseudo_lwm_ca import MATPseudoLWMWithCA
 model = MATPseudoLWMWithCA(gen_raw=True).to(device)
-model_name = "mat_pseudo_lwm_ca/512_100mat_pseudo_lwm_ca_weights.pth"
-results_file = "mat_pseudo_lwm_ca/results_mat_pseudo_ca.txt"
+model_name = os.path.join(SCRIPT_DIR, "512_100mat_pseudo_lwm_ca_weights.pth")
+results_file = os.path.join(SCRIPT_DIR, "results_mat_pseudo_ca.txt")
 photo_prefix = "pseudo_ca"
 
 state_dict = torch.load(f"{model_name}", map_location=device)
