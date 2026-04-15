@@ -1,0 +1,526 @@
+============================================================
+MAT Pseudo-Grid LWM (Method 2: 8×16) — Pre-training
+============================================================
+Log file    : mask_aware_tf_heavy/mat_pseudo_lwm_weights.log
+Device      : cuda
+Scenarios   : ['O1_3p5_v1', 'O1_3p5_v2', 'Boston5G_3p5', 'asu_campus1']
+AMP         : disabled
+Epochs      : 100
+Batch size  : 512
+LR          : 0.0005 | Weight decay: 1e-05
+Scheduler   : Warmup(5ep) + CosineAnnealing(eta_min=1e-06)
+Mask ratio  : 0.15
+Save path   : mask_aware_tf_heavy/mat_pseudo_lwm_weights.pth
+------------------------------------------------------------
+Dataset — train: 898605, val: 224651, test: 1
+============================================================
+
+Epoch 1/100
+----------------------------------------
+Learning Rate: 0.000005
+  step    50/1756 | loss 147.0274 | data 3.7 ms | step 25.9 ms | 19780.7 samples/s
+  step   100/1756 | loss 147.5989 | data 0.1 ms | step 16.1 ms | 31857.0 samples/s
+  step   150/1756 | loss 147.2465 | data 0.1 ms | step 16.1 ms | 31869.5 samples/s
+  step   200/1756 | loss 150.7310 | data 0.1 ms | step 16.1 ms | 31872.8 samples/s
+  step   250/1756 | loss 147.0253 | data 0.1 ms | step 16.1 ms | 31869.2 samples/s
+  step   300/1756 | loss 147.0281 | data 0.1 ms | step 16.1 ms | 31881.3 samples/s
+  step   350/1756 | loss 146.0259 | data 0.1 ms | step 16.1 ms | 31883.5 samples/s
+  step   400/1756 | loss 147.2972 | data 0.1 ms | step 16.1 ms | 31879.0 samples/s
+  step   450/1756 | loss 147.5961 | data 0.1 ms | step 16.1 ms | 31875.8 samples/s
+  step   500/1756 | loss 143.2845 | data 0.1 ms | step 16.1 ms | 31874.2 samples/s
+  step   550/1756 | loss 149.4420 | data 0.1 ms | step 16.1 ms | 31892.3 samples/s
+  step   600/1756 | loss 149.2617 | data 0.1 ms | step 16.1 ms | 31877.6 samples/s
+  step   650/1756 | loss 145.7445 | data 0.1 ms | step 16.1 ms | 31869.1 samples/s
+  step   700/1756 | loss 150.6737 | data 0.1 ms | step 16.1 ms | 31861.3 samples/s
+  step   750/1756 | loss 148.8728 | data 0.1 ms | step 16.1 ms | 31875.2 samples/s
+  step   800/1756 | loss 144.8793 | data 0.1 ms | step 16.1 ms | 31884.1 samples/s
+  step   850/1756 | loss 140.9717 | data 0.1 ms | step 16.1 ms | 31861.8 samples/s
+  step   900/1756 | loss 139.7188 | data 0.1 ms | step 16.1 ms | 31854.8 samples/s
+  step   950/1756 | loss 137.2486 | data 0.1 ms | step 16.1 ms | 31897.5 samples/s
+  step  1000/1756 | loss 141.1082 | data 0.1 ms | step 16.1 ms | 31864.6 samples/s
+  step  1050/1756 | loss 133.5471 | data 0.1 ms | step 16.1 ms | 31872.6 samples/s
+  step  1100/1756 | loss 135.9100 | data 0.1 ms | step 16.1 ms | 31866.9 samples/s
+  step  1150/1756 | loss 128.7152 | data 0.1 ms | step 16.1 ms | 31870.6 samples/s
+  step  1200/1756 | loss 126.5166 | data 0.1 ms | step 16.1 ms | 31876.9 samples/s
+  step  1250/1756 | loss 126.0103 | data 0.1 ms | step 15.8 ms | 32388.5 samples/s
+  step  1300/1756 | loss 124.1158 | data 0.1 ms | step 15.8 ms | 32367.1 samples/s
+  step  1350/1756 | loss 121.5069 | data 0.1 ms | step 15.9 ms | 32274.2 samples/s
+  step  1400/1756 | loss 115.6740 | data 0.1 ms | step 15.9 ms | 32224.4 samples/s
+  step  1450/1756 | loss 114.8200 | data 0.1 ms | step 15.8 ms | 32370.0 samples/s
+  step  1500/1756 | loss 113.4800 | data 0.1 ms | step 15.8 ms | 32378.7 samples/s
+  step  1550/1756 | loss 111.2783 | data 0.1 ms | step 15.8 ms | 32383.7 samples/s
+  step  1600/1756 | loss 110.7798 | data 0.1 ms | step 15.8 ms | 32383.6 samples/s
+  step  1650/1756 | loss 108.3473 | data 0.1 ms | step 15.8 ms | 32384.8 samples/s
+  step  1700/1756 | loss 104.3619 | data 0.1 ms | step 15.8 ms | 32382.2 samples/s
+  step  1750/1756 | loss 105.2864 | data 0.6 ms | step 15.8 ms | 32365.2 samples/s
+Training Loss: 134.148823 | 31436.5 samples/s
+Peak GPU memory: 2461.0 MB
+Validation Loss: 103.755933 | 103894.4 samples/s
+
+Epoch 2/100
+----------------------------------------
+Learning Rate: 0.000104
+  step    50/1756 | loss 102.2965 | data 0.8 ms | step 16.2 ms | 31674.1 samples/s
+  step   100/1756 | loss 105.7825 | data 0.1 ms | step 16.1 ms | 31816.5 samples/s
+  step   150/1756 | loss 99.4911 | data 0.1 ms | step 16.1 ms | 31825.9 samples/s
+  step   200/1756 | loss 97.2774 | data 0.1 ms | step 16.1 ms | 31835.5 samples/s
+  step   250/1756 | loss 83.1540 | data 0.1 ms | step 16.1 ms | 31839.3 samples/s
+  step   300/1756 | loss 84.7199 | data 0.1 ms | step 16.1 ms | 31851.7 samples/s
+  step   350/1756 | loss 83.2321 | data 0.1 ms | step 16.1 ms | 31848.9 samples/s
+  step   400/1756 | loss 83.6787 | data 0.1 ms | step 16.1 ms | 31848.4 samples/s
+  step   450/1756 | loss 80.7771 | data 0.1 ms | step 16.1 ms | 31835.8 samples/s
+  step   500/1756 | loss 79.6541 | data 0.1 ms | step 16.1 ms | 31841.3 samples/s
+  step   550/1756 | loss 76.7692 | data 0.1 ms | step 16.1 ms | 31853.0 samples/s
+  step   600/1756 | loss 76.4468 | data 0.1 ms | step 16.1 ms | 31841.1 samples/s
+  step   650/1756 | loss 76.2727 | data 0.1 ms | step 16.1 ms | 31847.3 samples/s
+  step   700/1756 | loss 75.9984 | data 0.1 ms | step 16.1 ms | 31808.9 samples/s
+  step   750/1756 | loss 72.1891 | data 0.1 ms | step 16.1 ms | 31825.2 samples/s
+  step   800/1756 | loss 75.0981 | data 0.1 ms | step 16.1 ms | 31832.2 samples/s
+  step   850/1756 | loss 76.0174 | data 0.1 ms | step 16.1 ms | 31834.7 samples/s
+  step   900/1756 | loss 71.0944 | data 0.1 ms | step 16.1 ms | 31836.0 samples/s
+  step   950/1756 | loss 75.7890 | data 0.1 ms | step 16.1 ms | 31833.2 samples/s
+  step  1000/1756 | loss 72.4270 | data 0.1 ms | step 16.1 ms | 31836.7 samples/s
+  step  1050/1756 | loss 71.9209 | data 0.1 ms | step 16.1 ms | 31824.4 samples/s
+  step  1100/1756 | loss 73.2800 | data 0.1 ms | step 16.1 ms | 31834.2 samples/s
+  step  1150/1756 | loss 69.5902 | data 0.1 ms | step 16.1 ms | 31889.4 samples/s
+  step  1200/1756 | loss 70.4161 | data 0.1 ms | step 16.2 ms | 31699.5 samples/s
+  step  1250/1756 | loss 72.2958 | data 0.1 ms | step 16.1 ms | 31809.0 samples/s
+  step  1300/1756 | loss 70.5538 | data 0.1 ms | step 16.1 ms | 31794.2 samples/s
+  step  1350/1756 | loss 72.3672 | data 0.1 ms | step 16.1 ms | 31800.8 samples/s
+  step  1400/1756 | loss 67.3230 | data 0.1 ms | step 16.1 ms | 31808.3 samples/s
+  step  1450/1756 | loss 67.5340 | data 0.1 ms | step 16.1 ms | 31799.6 samples/s
+  step  1500/1756 | loss 68.5732 | data 0.1 ms | step 16.1 ms | 31804.1 samples/s
+  step  1550/1756 | loss 67.3555 | data 0.1 ms | step 16.1 ms | 31802.7 samples/s
+  step  1600/1756 | loss 70.5582 | data 0.1 ms | step 16.1 ms | 31786.6 samples/s
+  step  1650/1756 | loss 68.4945 | data 0.1 ms | step 16.1 ms | 31801.0 samples/s
+  step  1700/1756 | loss 67.9735 | data 0.1 ms | step 16.1 ms | 31799.1 samples/s
+  step  1750/1756 | loss 68.4093 | data 0.6 ms | step 16.1 ms | 31785.6 samples/s
+Training Loss: 76.956078 | 31810.6 samples/s
+Peak GPU memory: 1978.4 MB
+Validation Loss: 66.473121 | 104045.5 samples/s
+
+Epoch 3/100
+----------------------------------------
+Learning Rate: 0.000203
+  step    50/1756 | loss 71.9243 | data 0.7 ms | step 16.1 ms | 31770.2 samples/s
+  step   100/1756 | loss 70.5968 | data 0.1 ms | step 16.1 ms | 31783.8 samples/s
+  step   150/1756 | loss 71.4194 | data 0.1 ms | step 16.1 ms | 31783.5 samples/s
+  step   200/1756 | loss 69.1660 | data 0.1 ms | step 16.1 ms | 31796.7 samples/s
+  step   250/1756 | loss 66.2198 | data 0.1 ms | step 16.1 ms | 31803.4 samples/s
+  step   300/1756 | loss 63.1468 | data 0.1 ms | step 16.1 ms | 31794.3 samples/s
+  step   350/1756 | loss 63.2952 | data 0.1 ms | step 16.1 ms | 31797.4 samples/s
+  step   400/1756 | loss 64.4490 | data 0.1 ms | step 16.1 ms | 31800.8 samples/s
+  step   450/1756 | loss 63.3474 | data 0.1 ms | step 16.1 ms | 31794.1 samples/s
+  step   500/1756 | loss 66.7099 | data 0.1 ms | step 16.1 ms | 31794.4 samples/s
+  step   550/1756 | loss 66.1444 | data 0.1 ms | step 16.1 ms | 31793.0 samples/s
+  step   600/1756 | loss 63.8117 | data 0.1 ms | step 16.1 ms | 31796.2 samples/s
+  step   650/1756 | loss 62.1106 | data 0.1 ms | step 16.1 ms | 31800.2 samples/s
+  step   700/1756 | loss 64.0369 | data 0.1 ms | step 16.1 ms | 31803.2 samples/s
+  step   750/1756 | loss 62.2437 | data 0.1 ms | step 16.1 ms | 31811.8 samples/s
+  step   800/1756 | loss 61.8604 | data 0.1 ms | step 16.1 ms | 31794.7 samples/s
+  step   850/1756 | loss 59.7099 | data 0.1 ms | step 16.1 ms | 31795.9 samples/s
+  step   900/1756 | loss 60.2828 | data 0.1 ms | step 16.1 ms | 31790.9 samples/s
+  step   950/1756 | loss 58.1903 | data 0.1 ms | step 16.1 ms | 31802.1 samples/s
+  step  1000/1756 | loss 59.6309 | data 0.1 ms | step 16.1 ms | 31790.0 samples/s
+  step  1050/1756 | loss 62.9026 | data 0.1 ms | step 16.1 ms | 31781.3 samples/s
+  step  1100/1756 | loss 59.9853 | data 0.1 ms | step 15.9 ms | 32229.0 samples/s
+  step  1150/1756 | loss 57.8819 | data 0.1 ms | step 15.8 ms | 32314.2 samples/s
+  step  1200/1756 | loss 56.6787 | data 0.1 ms | step 15.8 ms | 32326.8 samples/s
+  step  1250/1756 | loss 57.9602 | data 0.1 ms | step 15.8 ms | 32326.0 samples/s
+  step  1300/1756 | loss 54.3412 | data 0.1 ms | step 15.8 ms | 32320.0 samples/s
+  step  1350/1756 | loss 54.4366 | data 0.1 ms | step 15.9 ms | 32300.8 samples/s
+  step  1400/1756 | loss 53.1176 | data 0.1 ms | step 15.8 ms | 32340.1 samples/s
+  step  1450/1756 | loss 56.9105 | data 0.1 ms | step 15.8 ms | 32322.7 samples/s
+  step  1500/1756 | loss 55.4489 | data 0.1 ms | step 15.8 ms | 32328.7 samples/s
+  step  1550/1756 | loss 53.3649 | data 0.1 ms | step 15.8 ms | 32337.0 samples/s
+  step  1600/1756 | loss 51.1927 | data 0.1 ms | step 15.8 ms | 32331.4 samples/s
+  step  1650/1756 | loss 53.2754 | data 0.1 ms | step 15.8 ms | 32335.3 samples/s
+  step  1700/1756 | loss 51.7815 | data 0.1 ms | step 15.8 ms | 32326.5 samples/s
+  step  1750/1756 | loss 52.3246 | data 0.6 ms | step 15.9 ms | 32283.5 samples/s
+Training Loss: 60.549859 | 31995.0 samples/s
+Peak GPU memory: 1978.4 MB
+Validation Loss: 51.283655 | 106095.6 samples/s
+
+Epoch 4/100
+----------------------------------------
+Learning Rate: 0.000302
+  step    50/1756 | loss 55.1588 | data 0.6 ms | step 15.9 ms | 32235.7 samples/s
+  step   100/1756 | loss 54.0948 | data 0.1 ms | step 15.9 ms | 32276.7 samples/s
+  step   150/1756 | loss 52.8928 | data 0.1 ms | step 15.9 ms | 32298.8 samples/s
+  step   200/1756 | loss 52.3682 | data 0.1 ms | step 15.8 ms | 32310.5 samples/s
+  step   250/1756 | loss 51.3581 | data 0.1 ms | step 15.8 ms | 32309.9 samples/s
+  step   300/1756 | loss 50.5411 | data 0.1 ms | step 15.9 ms | 32296.8 samples/s
+  step   350/1756 | loss 48.9869 | data 0.1 ms | step 15.8 ms | 32307.1 samples/s
+  step   400/1756 | loss 49.5364 | data 0.1 ms | step 15.9 ms | 32295.8 samples/s
+  step   450/1756 | loss 50.5771 | data 0.1 ms | step 15.8 ms | 32314.4 samples/s
+  step   500/1756 | loss 49.7192 | data 0.1 ms | step 15.8 ms | 32317.4 samples/s
+  step   550/1756 | loss 46.7488 | data 0.1 ms | step 15.8 ms | 32317.2 samples/s
+  step   600/1756 | loss 46.7230 | data 0.1 ms | step 15.8 ms | 32305.1 samples/s
+  step   650/1756 | loss 46.3885 | data 0.1 ms | step 15.8 ms | 32312.8 samples/s
+  step   700/1756 | loss 46.7860 | data 0.1 ms | step 15.8 ms | 32313.5 samples/s
+  step   750/1756 | loss 47.0399 | data 0.1 ms | step 15.9 ms | 32302.4 samples/s
+  step   800/1756 | loss 45.0888 | data 0.1 ms | step 15.8 ms | 32315.0 samples/s
+  step   850/1756 | loss 45.0144 | data 0.1 ms | step 15.8 ms | 32332.1 samples/s
+  step   900/1756 | loss 44.4500 | data 0.1 ms | step 15.8 ms | 32318.7 samples/s
+  step   950/1756 | loss 44.6325 | data 0.1 ms | step 15.8 ms | 32308.5 samples/s
+  step  1000/1756 | loss 43.0735 | data 0.1 ms | step 15.8 ms | 32304.7 samples/s
+  step  1050/1756 | loss 44.1003 | data 0.1 ms | step 15.8 ms | 32322.3 samples/s
+  step  1100/1756 | loss 43.7269 | data 0.1 ms | step 15.8 ms | 32327.8 samples/s
+  step  1150/1756 | loss 42.3933 | data 0.1 ms | step 15.9 ms | 32302.8 samples/s
+  step  1200/1756 | loss 44.2500 | data 0.1 ms | step 15.8 ms | 32306.3 samples/s
+  step  1250/1756 | loss 44.5582 | data 0.1 ms | step 15.9 ms | 32296.1 samples/s
+  step  1300/1756 | loss 43.7926 | data 0.1 ms | step 15.9 ms | 32290.7 samples/s
+  step  1350/1756 | loss 43.9285 | data 0.1 ms | step 15.8 ms | 32310.7 samples/s
+  step  1400/1756 | loss 45.3459 | data 0.1 ms | step 15.8 ms | 32314.6 samples/s
+  step  1450/1756 | loss 43.8274 | data 0.1 ms | step 15.9 ms | 32264.2 samples/s
+  step  1500/1756 | loss 43.7397 | data 0.1 ms | step 15.8 ms | 32330.1 samples/s
+  step  1550/1756 | loss 42.4417 | data 0.1 ms | step 15.8 ms | 32307.7 samples/s
+  step  1600/1756 | loss 44.0668 | data 0.1 ms | step 15.8 ms | 32321.3 samples/s
+  step  1650/1756 | loss 42.8984 | data 0.1 ms | step 15.9 ms | 32302.2 samples/s
+  step  1700/1756 | loss 42.4230 | data 0.1 ms | step 15.8 ms | 32311.1 samples/s
+  step  1750/1756 | loss 41.5804 | data 0.6 ms | step 15.9 ms | 32301.0 samples/s
+Training Loss: 46.403161 | 32298.4 samples/s
+Peak GPU memory: 1978.4 MB
+Validation Loss: 40.571249 | 105995.3 samples/s
+
+Epoch 5/100
+----------------------------------------
+Learning Rate: 0.000401
+  step    50/1756 | loss 39.7201 | data 0.6 ms | step 15.9 ms | 32250.0 samples/s
+  step   100/1756 | loss 41.8857 | data 0.1 ms | step 15.9 ms | 32273.7 samples/s
+  step   150/1756 | loss 40.5689 | data 0.1 ms | step 15.9 ms | 32286.3 samples/s
+  step   200/1756 | loss 41.4623 | data 0.1 ms | step 15.9 ms | 32296.8 samples/s
+  step   250/1756 | loss 41.3411 | data 0.1 ms | step 15.9 ms | 32271.0 samples/s
+  step   300/1756 | loss 39.6608 | data 0.1 ms | step 15.8 ms | 32309.2 samples/s
+  step   350/1756 | loss 39.7423 | data 0.1 ms | step 15.9 ms | 32291.5 samples/s
+  step   400/1756 | loss 39.7557 | data 0.1 ms | step 15.8 ms | 32312.2 samples/s
+  step   450/1756 | loss 40.8284 | data 0.1 ms | step 15.8 ms | 32308.0 samples/s
+  step   500/1756 | loss 40.9581 | data 0.1 ms | step 15.9 ms | 32287.0 samples/s
+  step   550/1756 | loss 41.1523 | data 0.1 ms | step 15.9 ms | 32284.2 samples/s
+  step   600/1756 | loss 39.9495 | data 0.1 ms | step 15.8 ms | 32312.8 samples/s
+  step   650/1756 | loss 38.9448 | data 0.1 ms | step 15.8 ms | 32308.1 samples/s
+  step   700/1756 | loss 37.9688 | data 0.1 ms | step 15.9 ms | 32295.2 samples/s
+  step   750/1756 | loss 39.4212 | data 0.1 ms | step 15.8 ms | 32312.7 samples/s
+  step   800/1756 | loss 38.3437 | data 0.1 ms | step 15.8 ms | 32308.3 samples/s
+  step   850/1756 | loss 38.5132 | data 0.1 ms | step 15.9 ms | 32291.0 samples/s
+  step   900/1756 | loss 37.7096 | data 0.1 ms | step 15.8 ms | 32311.3 samples/s
+  step   950/1756 | loss 38.4243 | data 0.1 ms | step 15.9 ms | 32296.6 samples/s
+  step  1000/1756 | loss 36.6293 | data 0.1 ms | step 15.9 ms | 32293.6 samples/s
+  step  1050/1756 | loss 35.8512 | data 0.1 ms | step 15.8 ms | 32305.4 samples/s
+  step  1100/1756 | loss 39.2665 | data 0.1 ms | step 15.9 ms | 32290.0 samples/s
+  step  1150/1756 | loss 39.4267 | data 0.1 ms | step 15.8 ms | 32311.0 samples/s
+  step  1200/1756 | loss 37.6809 | data 0.1 ms | step 15.8 ms | 32321.1 samples/s
+  step  1250/1756 | loss 37.0715 | data 0.1 ms | step 15.8 ms | 32313.5 samples/s
+  step  1300/1756 | loss 36.8746 | data 0.1 ms | step 15.9 ms | 32296.8 samples/s
+  step  1350/1756 | loss 35.7662 | data 0.1 ms | step 15.8 ms | 32318.2 samples/s
+  step  1400/1756 | loss 35.6505 | data 0.1 ms | step 15.8 ms | 32321.9 samples/s
+  step  1450/1756 | loss 35.2195 | data 0.1 ms | step 15.8 ms | 32313.1 samples/s
+  step  1500/1756 | loss 35.1165 | data 0.1 ms | step 15.9 ms | 32292.5 samples/s
+  step  1550/1756 | loss 35.2991 | data 0.1 ms | step 15.9 ms | 32295.6 samples/s
+  step  1600/1756 | loss 34.5807 | data 0.1 ms | step 15.8 ms | 32312.4 samples/s
+  step  1650/1756 | loss 36.2028 | data 0.1 ms | step 15.8 ms | 32305.6 samples/s
+  step  1700/1756 | loss 34.4851 | data 0.1 ms | step 15.9 ms | 32301.0 samples/s
+  step  1750/1756 | loss 36.2784 | data 0.6 ms | step 15.9 ms | 32296.4 samples/s
+Training Loss: 38.225006 | 32292.8 samples/s
+Peak GPU memory: 1978.4 MB
+Validation Loss: 35.870041 | 105968.5 samples/s
+
+Epoch 6/100
+----------------------------------------
+Learning Rate: 0.000500
+  step    50/1756 | loss 35.8586 | data 0.7 ms | step 15.9 ms | 32290.2 samples/s
+  step   100/1756 | loss 35.4480 | data 0.1 ms | step 15.9 ms | 32275.1 samples/s
+  step   150/1756 | loss 34.3976 | data 0.1 ms | step 15.8 ms | 32306.4 samples/s
+  step   200/1756 | loss 35.8486 | data 0.1 ms | step 15.9 ms | 32298.0 samples/s
+  step   250/1756 | loss 36.8503 | data 0.1 ms | step 15.8 ms | 32310.7 samples/s
+  step   300/1756 | loss 36.2706 | data 0.1 ms | step 15.8 ms | 32313.7 samples/s
+  step   350/1756 | loss 37.4056 | data 0.1 ms | step 15.9 ms | 32296.4 samples/s
+  step   400/1756 | loss 34.8598 | data 0.1 ms | step 15.9 ms | 32296.2 samples/s
+  step   450/1756 | loss 42.2141 | data 0.1 ms | step 15.8 ms | 32309.6 samples/s
+  step   500/1756 | loss 39.9803 | data 0.1 ms | step 15.9 ms | 32300.0 samples/s
+  step   550/1756 | loss 36.8036 | data 0.1 ms | step 15.9 ms | 32256.1 samples/s
+  step   600/1756 | loss 35.4209 | data 0.1 ms | step 15.9 ms | 32255.6 samples/s
+  step   650/1756 | loss 34.5081 | data 0.1 ms | step 15.9 ms | 32266.7 samples/s
+  step   700/1756 | loss 34.0971 | data 0.1 ms | step 15.8 ms | 32313.6 samples/s
+  step   750/1756 | loss 33.3145 | data 0.1 ms | step 15.8 ms | 32311.7 samples/s
+  step   800/1756 | loss 32.2733 | data 0.1 ms | step 15.9 ms | 32299.2 samples/s
+  step   850/1756 | loss 34.7656 | data 0.1 ms | step 15.9 ms | 32300.9 samples/s
+  step   900/1756 | loss 31.7051 | data 0.1 ms | step 15.8 ms | 32316.2 samples/s
+  step   950/1756 | loss 32.4203 | data 0.1 ms | step 15.9 ms | 32286.4 samples/s
+  step  1000/1756 | loss 29.5122 | data 0.1 ms | step 15.9 ms | 32302.6 samples/s
+  step  1050/1756 | loss 29.6936 | data 0.1 ms | step 15.9 ms | 32301.4 samples/s
+  step  1100/1756 | loss 29.3984 | data 0.1 ms | step 15.8 ms | 32303.7 samples/s
+  step  1150/1756 | loss 29.8478 | data 0.1 ms | step 15.8 ms | 32308.6 samples/s
+  step  1200/1756 | loss 29.4000 | data 0.1 ms | step 15.8 ms | 32309.1 samples/s
+  step  1250/1756 | loss 32.5114 | data 0.1 ms | step 15.9 ms | 32302.7 samples/s
+  step  1300/1756 | loss 36.4649 | data 0.1 ms | step 15.9 ms | 32286.7 samples/s
+  step  1350/1756 | loss 159.0044 | data 0.1 ms | step 15.8 ms | 32311.5 samples/s
+  step  1400/1756 | loss 113.2330 | data 0.1 ms | step 15.8 ms | 32323.6 samples/s
+  step  1450/1756 | loss 114.2408 | data 0.1 ms | step 15.8 ms | 32311.0 samples/s
+  step  1500/1756 | loss 114.4595 | data 0.1 ms | step 15.8 ms | 32322.0 samples/s
+  step  1550/1756 | loss 127.8589 | data 0.1 ms | step 15.8 ms | 32311.8 samples/s
+  step  1600/1756 | loss 146.2656 | data 0.1 ms | step 15.8 ms | 32312.4 samples/s
+  step  1650/1756 | loss 82.6017 | data 0.1 ms | step 15.8 ms | 32323.7 samples/s
+  step  1700/1756 | loss 83.7059 | data 0.1 ms | step 15.8 ms | 32317.6 samples/s
+  step  1750/1756 | loss 75.5472 | data 0.6 ms | step 15.9 ms | 32299.9 samples/s
+Training Loss: 54.598569 | 32294.8 samples/s
+Peak GPU memory: 1978.4 MB
+Validation Loss: 73.771508 | 106051.2 samples/s
+
+Epoch 7/100
+----------------------------------------
+Learning Rate: 0.000500
+  step    50/1756 | loss 71.5434 | data 0.7 ms | step 15.9 ms | 32287.1 samples/s
+  step   100/1756 | loss 73.0950 | data 0.1 ms | step 15.8 ms | 32312.6 samples/s
+  step   150/1756 | loss 69.9577 | data 0.1 ms | step 15.9 ms | 32298.9 samples/s
+  step   200/1756 | loss 70.0289 | data 0.1 ms | step 15.8 ms | 32307.3 samples/s
+  step   250/1756 | loss 64.3110 | data 0.1 ms | step 15.8 ms | 32310.1 samples/s
+  step   300/1756 | loss 69.3013 | data 0.1 ms | step 15.8 ms | 32307.7 samples/s
+  step   350/1756 | loss 62.4017 | data 0.1 ms | step 15.8 ms | 32322.2 samples/s
+  step   400/1756 | loss 71.5138 | data 0.1 ms | step 15.8 ms | 32328.6 samples/s
+  step   450/1756 | loss 143.8055 | data 0.1 ms | step 15.8 ms | 32303.8 samples/s
+  step   500/1756 | loss 78.3856 | data 0.1 ms | step 15.8 ms | 32304.8 samples/s
+  step   550/1756 | loss 69.0171 | data 0.1 ms | step 15.8 ms | 32322.1 samples/s
+  step   600/1756 | loss 65.1909 | data 0.1 ms | step 15.8 ms | 32312.4 samples/s
+  step   650/1756 | loss 61.3595 | data 0.1 ms | step 15.8 ms | 32307.0 samples/s
+  step   700/1756 | loss 63.2011 | data 0.1 ms | step 15.8 ms | 32306.3 samples/s
+  step   750/1756 | loss 74.9665 | data 0.1 ms | step 15.8 ms | 32306.0 samples/s
+  step   800/1756 | loss 66.7107 | data 0.1 ms | step 15.8 ms | 32310.6 samples/s
+  step   850/1756 | loss 65.0116 | data 0.1 ms | step 15.8 ms | 32308.1 samples/s
+  step   900/1756 | loss 59.4000 | data 0.1 ms | step 15.9 ms | 32293.5 samples/s
+  step   950/1756 | loss 53.8571 | data 0.1 ms | step 15.8 ms | 32313.8 samples/s
+  step  1000/1756 | loss 90.8922 | data 0.1 ms | step 15.9 ms | 32295.9 samples/s
+  step  1050/1756 | loss 111.7148 | data 0.1 ms | step 15.8 ms | 32309.5 samples/s
+  step  1100/1756 | loss 93.3487 | data 0.1 ms | step 15.8 ms | 32304.2 samples/s
+  step  1150/1756 | loss 86.5284 | data 0.1 ms | step 15.8 ms | 32318.7 samples/s
+  step  1200/1756 | loss 232.4965 | data 0.1 ms | step 15.8 ms | 32324.1 samples/s
+  step  1250/1756 | loss 112.6456 | data 0.1 ms | step 15.9 ms | 32295.2 samples/s
+  step  1300/1756 | loss 108.6866 | data 0.1 ms | step 15.8 ms | 32326.4 samples/s
+  step  1350/1756 | loss 93.1269 | data 0.1 ms | step 15.8 ms | 32320.0 samples/s
+  step  1400/1756 | loss 90.8043 | data 0.1 ms | step 15.8 ms | 32324.3 samples/s
+  step  1450/1756 | loss 85.2632 | data 0.1 ms | step 15.8 ms | 32332.0 samples/s
+  step  1500/1756 | loss 86.9471 | data 0.1 ms | step 15.8 ms | 32328.9 samples/s
+  step  1550/1756 | loss 80.0129 | data 0.1 ms | step 15.8 ms | 32330.6 samples/s
+  step  1600/1756 | loss 81.7173 | data 0.1 ms | step 15.8 ms | 32320.3 samples/s
+  step  1650/1756 | loss 73.8410 | data 0.1 ms | step 15.8 ms | 32309.9 samples/s
+  step  1700/1756 | loss 80.3229 | data 0.1 ms | step 16.1 ms | 31740.5 samples/s
+  step  1750/1756 | loss 89.7985 | data 0.6 ms | step 15.8 ms | 32312.8 samples/s
+Training Loss: 84.327124 | 32288.5 samples/s
+Peak GPU memory: 1978.4 MB
+Validation Loss: 82.716363 | 106218.7 samples/s
+
+Epoch 8/100
+----------------------------------------
+Learning Rate: 0.000499
+  step    50/1756 | loss 78.6947 | data 0.6 ms | step 15.8 ms | 32305.9 samples/s
+  step   100/1756 | loss 82.9674 | data 0.1 ms | step 15.9 ms | 32297.9 samples/s
+  step   150/1756 | loss 77.8388 | data 0.1 ms | step 15.8 ms | 32316.4 samples/s
+  step   200/1756 | loss 76.0521 | data 0.1 ms | step 15.8 ms | 32307.9 samples/s
+  step   250/1756 | loss 74.8017 | data 0.1 ms | step 15.8 ms | 32340.5 samples/s
+  step   300/1756 | loss 70.3379 | data 0.1 ms | step 15.8 ms | 32320.3 samples/s
+  step   350/1756 | loss 75.0210 | data 0.1 ms | step 15.8 ms | 32334.0 samples/s
+  step   400/1756 | loss 70.6028 | data 0.1 ms | step 15.8 ms | 32350.9 samples/s
+  step   450/1756 | loss 70.4233 | data 0.1 ms | step 15.8 ms | 32331.0 samples/s
+  step   500/1756 | loss 69.2999 | data 0.1 ms | step 15.8 ms | 32343.3 samples/s
+  step   550/1756 | loss 106.0570 | data 0.1 ms | step 15.8 ms | 32336.9 samples/s
+  step   600/1756 | loss 128.7433 | data 0.1 ms | step 15.8 ms | 32323.9 samples/s
+  step   650/1756 | loss 78.4991 | data 0.1 ms | step 15.8 ms | 32330.8 samples/s
+  step   700/1756 | loss 72.7890 | data 0.1 ms | step 15.9 ms | 32300.0 samples/s
+  step   750/1756 | loss 76.3856 | data 0.1 ms | step 15.8 ms | 32305.3 samples/s
+  step   800/1756 | loss 73.9575 | data 0.1 ms | step 15.8 ms | 32329.6 samples/s
+  step   850/1756 | loss 76.8890 | data 0.1 ms | step 15.8 ms | 32306.5 samples/s
+  step   900/1756 | loss 82.1965 | data 0.1 ms | step 15.8 ms | 32334.0 samples/s
+  step   950/1756 | loss 79.0475 | data 0.1 ms | step 15.8 ms | 32350.8 samples/s
+  step  1000/1756 | loss 71.4749 | data 0.1 ms | step 15.8 ms | 32348.2 samples/s
+  step  1050/1756 | loss 70.3838 | data 0.1 ms | step 15.8 ms | 32348.9 samples/s
+  step  1100/1756 | loss 67.7933 | data 0.1 ms | step 15.8 ms | 32343.2 samples/s
+  step  1150/1756 | loss 66.3153 | data 0.1 ms | step 15.8 ms | 32345.8 samples/s
+  step  1200/1756 | loss 65.8485 | data 0.1 ms | step 15.8 ms | 32349.7 samples/s
+  step  1250/1756 | loss 64.8918 | data 0.1 ms | step 15.8 ms | 32337.1 samples/s
+  step  1300/1756 | loss 64.9898 | data 0.1 ms | step 15.8 ms | 32323.1 samples/s
+  step  1350/1756 | loss 66.4865 | data 0.1 ms | step 15.8 ms | 32345.9 samples/s
+  step  1400/1756 | loss 67.1241 | data 0.1 ms | step 15.8 ms | 32336.6 samples/s
+  step  1450/1756 | loss 128.2149 | data 0.1 ms | step 15.8 ms | 32357.2 samples/s
+  step  1500/1756 | loss 137.3490 | data 0.1 ms | step 15.8 ms | 32336.2 samples/s
+  step  1550/1756 | loss 102.4702 | data 0.1 ms | step 15.8 ms | 32347.2 samples/s
+  step  1600/1756 | loss 99.6672 | data 0.1 ms | step 15.8 ms | 32340.3 samples/s
+  step  1650/1756 | loss 91.3486 | data 0.1 ms | step 15.8 ms | 32342.9 samples/s
+  step  1700/1756 | loss 87.7418 | data 0.1 ms | step 15.8 ms | 32333.7 samples/s
+  step  1750/1756 | loss 83.2416 | data 0.7 ms | step 15.8 ms | 32317.4 samples/s
+Training Loss: 81.601458 | 32324.8 samples/s
+Peak GPU memory: 1978.4 MB
+Validation Loss: 85.229273 | 106311.2 samples/s
+
+Epoch 9/100
+----------------------------------------
+Learning Rate: 0.000499
+  step    50/1756 | loss 86.9420 | data 0.7 ms | step 15.9 ms | 32295.6 samples/s
+  step   100/1756 | loss 85.4355 | data 0.1 ms | step 15.8 ms | 32315.5 samples/s
+  step   150/1756 | loss 83.3574 | data 0.1 ms | step 15.8 ms | 32360.3 samples/s
+  step   200/1756 | loss 81.1584 | data 0.1 ms | step 15.8 ms | 32345.4 samples/s
+  step   250/1756 | loss 78.4198 | data 0.1 ms | step 15.8 ms | 32352.3 samples/s
+  step   300/1756 | loss 80.1191 | data 0.1 ms | step 15.8 ms | 32355.5 samples/s
+  step   350/1756 | loss 79.3052 | data 0.1 ms | step 15.8 ms | 32326.0 samples/s
+  step   400/1756 | loss 95.0689 | data 0.1 ms | step 15.8 ms | 32326.3 samples/s
+  step   450/1756 | loss 85.7526 | data 0.1 ms | step 15.8 ms | 32347.8 samples/s
+  step   500/1756 | loss 81.6721 | data 0.1 ms | step 15.8 ms | 32339.5 samples/s
+  step   550/1756 | loss 82.5176 | data 0.1 ms | step 15.8 ms | 32335.9 samples/s
+  step   600/1756 | loss 78.8734 | data 0.1 ms | step 15.8 ms | 32322.3 samples/s
+  step   650/1756 | loss 77.4725 | data 0.1 ms | step 15.9 ms | 32254.4 samples/s
+  step   700/1756 | loss 82.7118 | data 0.1 ms | step 15.8 ms | 32328.9 samples/s
+  step   750/1756 | loss 81.4565 | data 0.1 ms | step 15.8 ms | 32317.2 samples/s
+  step   800/1756 | loss 73.6590 | data 0.1 ms | step 15.8 ms | 32325.0 samples/s
+  step   850/1756 | loss 84.1964 | data 0.1 ms | step 15.8 ms | 32309.0 samples/s
+  step   900/1756 | loss 83.3315 | data 0.1 ms | step 15.8 ms | 32323.6 samples/s
+  step   950/1756 | loss 103.8554 | data 0.1 ms | step 15.8 ms | 32342.6 samples/s
+  step  1000/1756 | loss 82.2658 | data 0.1 ms | step 15.8 ms | 32328.2 samples/s
+  step  1050/1756 | loss 80.4479 | data 0.1 ms | step 15.8 ms | 32330.0 samples/s
+  step  1100/1756 | loss 86.4369 | data 0.1 ms | step 15.8 ms | 32348.1 samples/s
+  step  1150/1756 | loss 102.1754 | data 0.1 ms | step 15.8 ms | 32351.6 samples/s
+  step  1200/1756 | loss 87.1570 | data 0.1 ms | step 15.8 ms | 32352.3 samples/s
+  step  1250/1756 | loss 86.0972 | data 0.1 ms | step 15.8 ms | 32354.2 samples/s
+  step  1300/1756 | loss 80.5725 | data 0.1 ms | step 15.8 ms | 32332.6 samples/s
+  step  1350/1756 | loss 84.9729 | data 0.1 ms | step 15.8 ms | 32348.1 samples/s
+  step  1400/1756 | loss 80.4178 | data 0.1 ms | step 15.8 ms | 32336.3 samples/s
+  step  1450/1756 | loss 87.1011 | data 0.1 ms | step 15.8 ms | 32335.2 samples/s
+  step  1500/1756 | loss 88.6344 | data 0.1 ms | step 15.8 ms | 32336.3 samples/s
+  step  1550/1756 | loss 90.8803 | data 0.1 ms | step 15.8 ms | 32333.2 samples/s
+  step  1600/1756 | loss 80.2261 | data 0.1 ms | step 15.8 ms | 32348.7 samples/s
+  step  1650/1756 | loss 355.9331 | data 0.1 ms | step 15.8 ms | 32361.9 samples/s
+  step  1700/1756 | loss 144.9222 | data 0.1 ms | step 15.8 ms | 32347.6 samples/s
+  step  1750/1756 | loss 95.6101 | data 0.6 ms | step 15.8 ms | 32340.0 samples/s
+Training Loss: 94.226533 | 32329.7 samples/s
+Peak GPU memory: 1978.4 MB
+Validation Loss: 89.507298 | 106256.5 samples/s
+
+Epoch 10/100
+----------------------------------------
+Learning Rate: 0.000498
+  step    50/1756 | loss 87.2724 | data 0.7 ms | step 15.9 ms | 32290.4 samples/s
+  step   100/1756 | loss 99.9464 | data 0.1 ms | step 15.8 ms | 32335.8 samples/s
+  step   150/1756 | loss 141.2129 | data 0.1 ms | step 15.8 ms | 32339.0 samples/s
+  step   200/1756 | loss 145.6632 | data 0.1 ms | step 15.8 ms | 32325.5 samples/s
+  step   250/1756 | loss 2241.5650 | data 0.1 ms | step 15.8 ms | 32368.7 samples/s
+  step   300/1756 | loss 301.6089 | data 0.1 ms | step 15.8 ms | 32368.1 samples/s
+  step   350/1756 | loss 184.7815 | data 0.1 ms | step 15.8 ms | 32355.3 samples/s
+  step   400/1756 | loss 247.3994 | data 0.1 ms | step 15.8 ms | 32360.9 samples/s
+  step   450/1756 | loss 170.6965 | data 0.1 ms | step 15.8 ms | 32386.1 samples/s
+  step   500/1756 | loss 161.2928 | data 0.1 ms | step 15.8 ms | 32358.5 samples/s
+  step   550/1756 | loss 160.8243 | data 0.1 ms | step 15.8 ms | 32372.9 samples/s
+  step   600/1756 | loss 166.6379 | data 0.1 ms | step 15.8 ms | 32344.8 samples/s
+  step   650/1756 | loss 158.5883 | data 0.1 ms | step 15.8 ms | 32368.4 samples/s
+  step   700/1756 | loss 153.2933 | data 0.1 ms | step 15.8 ms | 32367.5 samples/s
+  step   750/1756 | loss 162.7526 | data 0.1 ms | step 15.8 ms | 32364.8 samples/s
+  step   800/1756 | loss 279.0359 | data 0.1 ms | step 15.8 ms | 32348.2 samples/s
+  step   850/1756 | loss 159.0418 | data 0.1 ms | step 15.8 ms | 32358.5 samples/s
+  step   900/1756 | loss 155.7024 | data 0.1 ms | step 15.8 ms | 32358.1 samples/s
+  step   950/1756 | loss 151.4369 | data 0.1 ms | step 15.8 ms | 32359.7 samples/s
+  step  1000/1756 | loss 169.7859 | data 0.1 ms | step 15.8 ms | 32368.7 samples/s
+  step  1050/1756 | loss 140.8782 | data 0.1 ms | step 15.8 ms | 32364.9 samples/s
+  step  1100/1756 | loss 140.3902 | data 0.1 ms | step 15.8 ms | 32369.7 samples/s
+  step  1150/1756 | loss 144.8203 | data 0.1 ms | step 15.8 ms | 32358.9 samples/s
+  step  1200/1756 | loss 143.7636 | data 0.1 ms | step 15.8 ms | 32348.5 samples/s
+  step  1250/1756 | loss 123.2415 | data 0.1 ms | step 15.8 ms | 32340.2 samples/s
+  step  1300/1756 | loss 116.0322 | data 0.1 ms | step 15.8 ms | 32365.6 samples/s
+  step  1350/1756 | loss 1823.2248 | data 0.1 ms | step 15.8 ms | 32373.1 samples/s
+  step  1400/1756 | loss 2717.2706 | data 0.1 ms | step 15.8 ms | 32381.7 samples/s
+  step  1450/1756 | loss 1222.9640 | data 0.1 ms | step 15.8 ms | 32362.9 samples/s
+  step  1500/1756 | loss 1718.9857 | data 0.1 ms | step 15.8 ms | 32355.6 samples/s
+  step  1550/1756 | loss 730.0127 | data 0.1 ms | step 15.8 ms | 32365.8 samples/s
+  step  1600/1756 | loss 621.1926 | data 0.1 ms | step 15.8 ms | 32356.2 samples/s
+  step  1650/1756 | loss 491.6005 | data 0.1 ms | step 15.8 ms | 32343.3 samples/s
+  step  1700/1756 | loss 437.8107 | data 0.1 ms | step 15.8 ms | 32351.9 samples/s
+  step  1750/1756 | loss 524.7946 | data 0.5 ms | step 15.8 ms | 32339.2 samples/s
+Training Loss: 474.478830 | 32351.4 samples/s
+Peak GPU memory: 1978.4 MB
+Validation Loss: 604.376128 | 106276.4 samples/s
+
+Epoch 11/100
+----------------------------------------
+Learning Rate: 0.000497
+  step    50/1756 | loss 28731.5892 | data 0.7 ms | step 15.9 ms | 32291.9 samples/s
+  step   100/1756 | loss 56093.2192 | data 0.1 ms | step 15.8 ms | 32328.7 samples/s
+  step   150/1756 | loss 5766.6625 | data 0.1 ms | step 15.8 ms | 32318.0 samples/s
+  step   200/1756 | loss 29220.5569 | data 0.1 ms | step 15.8 ms | 32337.0 samples/s
+  step   250/1756 | loss 31077002.6259 | data 0.1 ms | step 15.9 ms | 32287.5 samples/s
+  step   300/1756 | loss 2114591536.6400 | data 0.1 ms | step 15.8 ms | 32338.5 samples/s
+  step   350/1756 | loss 2560206172.1600 | data 0.1 ms | step 15.8 ms | 32347.9 samples/s
+  step   400/1756 | loss 108701885111.0400 | data 0.1 ms | step 15.8 ms | 32340.0 samples/s
+  step   450/1756 | loss 69416544317.4400 | data 0.1 ms | step 15.9 ms | 32280.9 samples/s
+  step   500/1756 | loss 11009483089.9200 | data 0.1 ms | step 15.9 ms | 32292.6 samples/s
+  step   550/1756 | loss 7448654909.4400 | data 0.1 ms | step 15.9 ms | 32284.0 samples/s
+  step   600/1756 | loss 6122630824.9600 | data 0.1 ms | step 15.9 ms | 32291.7 samples/s
+  step   650/1756 | loss 4031369487.3600 | data 0.1 ms | step 15.9 ms | 32290.4 samples/s
+  step   700/1756 | loss 2455672481.2800 | data 0.1 ms | step 15.9 ms | 32301.5 samples/s
+  step   750/1756 | loss 2318228318.7200 | data 0.1 ms | step 15.9 ms | 32242.5 samples/s
+  step   800/1756 | loss 2283912286.7200 | data 0.1 ms | step 15.9 ms | 32263.5 samples/s
+  step   850/1756 | loss 2255806776.3200 | data 0.1 ms | step 15.9 ms | 32280.0 samples/s
+  step   900/1756 | loss 2244855157.7600 | data 0.1 ms | step 15.9 ms | 32191.6 samples/s
+  step   950/1756 | loss 2237961369.6000 | data 0.1 ms | step 15.9 ms | 32259.9 samples/s
+  step  1000/1756 | loss 2036981140.4800 | data 0.1 ms | step 15.9 ms | 32258.5 samples/s
+  step  1050/1756 | loss 1972657085.4400 | data 0.1 ms | step 15.9 ms | 32269.0 samples/s
+  step  1100/1756 | loss 1787778112.0000 | data 0.1 ms | step 15.9 ms | 32271.1 samples/s
+  step  1150/1756 | loss 1616252316.1600 | data 0.1 ms | step 15.9 ms | 32239.1 samples/s
+  step  1200/1756 | loss 1707055834.8800 | data 0.1 ms | step 15.9 ms | 32290.8 samples/s
+  step  1250/1756 | loss 1709099207.6800 | data 0.1 ms | step 15.9 ms | 32271.3 samples/s
+  step  1300/1756 | loss 1931963832.3200 | data 0.1 ms | step 15.9 ms | 32272.6 samples/s
+  step  1350/1756 | loss 1707737341.4400 | data 0.1 ms | step 15.9 ms | 32282.7 samples/s
+  step  1400/1756 | loss 1641463851.5200 | data 0.1 ms | step 15.9 ms | 32261.1 samples/s
+  step  1450/1756 | loss 1674484733.4400 | data 0.1 ms | step 15.9 ms | 32270.2 samples/s
+  step  1500/1756 | loss 1612317327.3600 | data 0.1 ms | step 15.9 ms | 32274.0 samples/s
+  step  1550/1756 | loss 1587477111.0400 | data 0.1 ms | step 15.9 ms | 32292.8 samples/s
+  step  1600/1756 | loss 1405868624.6400 | data 0.1 ms | step 15.9 ms | 32287.7 samples/s
+  step  1650/1756 | loss 1233661258.2400 | data 0.1 ms | step 15.9 ms | 32261.7 samples/s
+  step  1700/1756 | loss 1544067333.1200 | data 0.1 ms | step 15.9 ms | 32280.8 samples/s
+  step  1750/1756 | loss 1651472604.1600 | data 0.6 ms | step 15.9 ms | 32259.3 samples/s
+Training Loss: 7182341030.540254 | 32276.1 samples/s
+Peak GPU memory: 1978.4 MB
+Validation Loss: 1704398947.717540 | 106329.3 samples/s
+
+Epoch 12/100
+----------------------------------------
+Learning Rate: 0.000495
+  step    50/1756 | loss 1667675338.2400 | data 0.8 ms | step 15.9 ms | 32255.9 samples/s
+  step   100/1756 | loss 1602345518.0800 | data 0.1 ms | step 15.9 ms | 32239.6 samples/s
+  step   150/1756 | loss 1619912642.5600 | data 0.1 ms | step 15.9 ms | 32268.9 samples/s
+  step   200/1756 | loss 1531854899.2000 | data 0.1 ms | step 15.9 ms | 32277.9 samples/s
+  step   250/1756 | loss 980634498.5600 | data 0.1 ms | step 15.9 ms | 32250.3 samples/s
+  step   300/1756 | loss 783853429.1200 | data 0.1 ms | step 15.9 ms | 32260.2 samples/s
+  step   350/1756 | loss 800984112.6400 | data 0.1 ms | step 15.9 ms | 32283.2 samples/s
+  step   400/1756 | loss 726890164.4800 | data 0.1 ms | step 15.9 ms | 32269.7 samples/s
+  step   450/1756 | loss 707491765.1200 | data 0.1 ms | step 15.9 ms | 32296.0 samples/s
+  step   500/1756 | loss 679258056.9600 | data 0.1 ms | step 15.9 ms | 32285.2 samples/s
+  step   550/1756 | loss 611547860.4800 | data 0.1 ms | step 15.9 ms | 32290.7 samples/s
+  step   600/1756 | loss 622386031.3600 | data 0.1 ms | step 15.9 ms | 32277.0 samples/s
+  step   650/1756 | loss 613329412.4800 | data 0.1 ms | step 15.9 ms | 32287.0 samples/s
+  step   700/1756 | loss 602800428.8000 | data 0.1 ms | step 15.9 ms | 32282.7 samples/s
+  step   750/1756 | loss 560006949.7600 | data 0.1 ms | step 15.9 ms | 32291.2 samples/s
+  step   800/1756 | loss 583618532.4800 | data 0.1 ms | step 15.9 ms | 32277.7 samples/s
+  step   850/1756 | loss 538653056.6400 | data 0.1 ms | step 15.9 ms | 32268.5 samples/s
+  step   900/1756 | loss 548324803.2000 | data 0.1 ms | step 15.9 ms | 32272.0 samples/s
+  step   950/1756 | loss 544928606.7200 | data 0.1 ms | step 15.9 ms | 32285.1 samples/s
+  step  1000/1756 | loss 528894398.7200 | data 0.1 ms | step 15.9 ms | 32263.6 samples/s
+  step  1050/1756 | loss 533919786.2400 | data 0.1 ms | step 15.9 ms | 32280.1 samples/s
+  step  1100/1756 | loss 507949806.7200 | data 0.1 ms | step 15.9 ms | 32285.4 samples/s
+  step  1150/1756 | loss 510037027.8400 | data 0.1 ms | step 15.9 ms | 32274.8 samples/s
+  step  1200/1756 | loss 482439233.2800 | data 0.1 ms | step 15.9 ms | 32296.7 samples/s
+  step  1250/1756 | loss 448682047.3600 | data 0.1 ms | step 15.9 ms | 32292.5 samples/s
+  step  1300/1756 | loss 455660179.2000 | data 0.1 ms | step 15.9 ms | 32271.7 samples/s
+  step  1350/1756 | loss 460038977.9200 | data 0.1 ms | step 15.9 ms | 32257.2 samples/s
+  step  1400/1756 | loss 453373868.1600 | data 0.1 ms | step 15.9 ms | 32254.9 samples/s
+  step  1450/1756 | loss 451782729.6000 | data 0.1 ms | step 15.9 ms | 32294.3 samples/s
+  step  1500/1756 | loss 430604906.8800 | data 0.1 ms | step 15.9 ms | 32255.3 samples/s
+  step  1550/1756 | loss 402655775.3600 | data 0.1 ms | step 15.9 ms | 32274.6 samples/s
+  step  1600/1756 | loss 414828748.8000 | data 0.1 ms | step 15.9 ms | 32279.9 samples/s
+  step  1650/1756 | loss 384926949.4400 | data 0.1 ms | step 15.9 ms | 32193.8 samples/s
+  step  1700/1756 | loss 394129287.0400 | data 0.1 ms | step 15.9 ms | 32279.6 samples/s
+  step  1750/1756 | loss 358338782.0800 | data 0.6 ms | step 15.9 ms | 32229.3 samples/s
+Training Loss: 671695259.216401 | 32264.7 samples/s
+Peak GPU memory: 1978.4 MB
+Validation Loss: 374996983.690205 | 106358.6 samples/s
+
+Epoch 13/100
+----------------------------------------
+Learning Rate: 0.000493
+  step    50/1756 | loss 359937234.2400 | data 0.7 ms | step 15.9 ms | 32249.2 samples/s
+  step   100/1756 | loss 338326065.6000 | data 0.1 ms | step 15.9 ms | 32180.5 samples/s
