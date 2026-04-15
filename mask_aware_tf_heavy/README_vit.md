@@ -17,9 +17,9 @@ Input (B, 2, 32, 32)         ← Real + Imaginary channels
    └────────────────────┘
          │
    ┌─ 3 MAT Stages Body (LayerScaled) ─┐
-   │  Stage 1 (3 ATB+Conv)          │    ← WindowMHA + LayerScale (γ=1e-4)
-   │  Stage 2 (3 ATB+Conv)          │    ← Shifted windows + LayerScale
-   │  Stage 3 (3 ATB+Conv)          │    ← Standard windows + LayerScale
+   │  Stage 1 (2 ATB+Conv)          │    ← WindowMHA + LayerScale (γ=1e-2)
+   │  Stage 2 (2 ATB+Conv)          │    ← Shifted windows + LayerScale
+   │  Stage 3 (2 ATB+Conv)          │    ← Standard windows + LayerScale
    └───────────────────────────────────┘
          │
    (B, 64, 32, 32)           ← MAT output features
@@ -76,8 +76,8 @@ to attend to reconstructed features from Stage 1.
 ## Deeper Architecture: MATStage & The LayerScale Imperative
 
 To match the 12-layer depth of the original Large Wireless Model (LWM), the model utilizes 3 full `MATStage` modules. Each `MATStage` evaluates:
-1. 3 sequential ATBs (yielding 9 ATBs total across the network).
-2. The middle ATB of each stage utilizes shifted windows (`shift=True`) for cross-window communication.
+1. 2 sequential ATBs (yielding 6 ATBs total across the network).
+2. The second ATB of each stage utilizes shifted windows (`shift=True`) for cross-window communication.
 3. A `3x3` localized convolutional layer mapping wrapping the final ATB block.
 4. A macroscopic residual logic connecting the identity wrapper to the end feature transformation.
 
@@ -87,7 +87,7 @@ However, **normalization layers strictly average statistical data over the token
 
 To counter this, **LayerScale** is strictly applied across the entire network body:
 - **Zero Leakage:** Instead of averaging tokens across the spatial grid, each branch connection (`mlp`, `local_conv`, and `stage_conv`) is multiplied exclusively by a fixed, uniquely learnable scalar parameter `gamma`. Pixel A computes itself mathematically completely blind to the presence of an empty Pixel B. 
-- **Exploding Gradient Nullification:** Every `gamma` is forcefully initialized directly to `1e-4` scale. This aggressively chokes the starting residual contribution, essentially compelling the deep 9-layer `Heavy_MAT` model to strictly feign a completely safe and shallow sub-network at Epoch 0. As convergence aligns smoothly over descending epochs, the model gently trains the `gamma` scales up to introduce deeper representation fidelity.
+- **Exploding Gradient Nullification:** Every `gamma` is initialized to `1e-2` scale. This aggressively chokes the starting residual contribution, essentially compelling the deep 6-layer `Heavy_MAT` model to strictly feign a completely safe and shallow sub-network at Epoch 0, while still allowing gradients to flow deep into the network. As convergence aligns smoothly over descending epochs, the model gently trains the `gamma` scales up to introduce deeper representation fidelity.
  
 This gives the model the parameter depth required to natively rival the original LWM while retaining MAT's 2D dynamic noise-filtering and completely eliminating explosive loss.
 

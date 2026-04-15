@@ -14,6 +14,7 @@ Split Ratio: 0.2 | Test Accuracy: 85.90% | Test F1: 0.8576
 
 Split Ratio: 0.4 | Test Accuracy: 87.59% | Test F1: 0.8748
 
+
 ---------------------------- training Details ----------------------------
 Dataset Size: 519636, shape: torch.Size([519636, 128, 64])
 epochs: 30, batch size: 32, input type: channel_emb

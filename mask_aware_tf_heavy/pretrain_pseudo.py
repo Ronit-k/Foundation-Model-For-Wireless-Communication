@@ -32,7 +32,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR, LinearLR, SequentialLR
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -76,8 +76,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size",   type=int,   default=64)
     parser.add_argument("--train-ratio",  type=float, default=0.8)
     parser.add_argument("--val-ratio",    type=float, default=0.2)
-    parser.add_argument("--lr",           type=float, default=1e-4)
+    parser.add_argument("--lr",           type=float, default=5e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-5)
+    parser.add_argument("--warmup-epochs", type=int,  default=5)
+    parser.add_argument("--eta-min",     type=float, default=1e-6)
     parser.add_argument("--step-size",    type=int,   default=10)
     parser.add_argument("--gamma",        type=float, default=0.9)
     parser.add_argument("--seed",         type=int,   default=0)
@@ -357,7 +359,18 @@ def main():
             print(f"[Warning] torch.compile failed: {exc}")
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    scheduler = StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
+
+    # Warmup + Cosine Annealing schedule
+    warmup_scheduler = LinearLR(
+        optimizer, start_factor=1e-2, end_factor=1.0, total_iters=args.warmup_epochs
+    )
+    cosine_scheduler = CosineAnnealingLR(
+        optimizer, T_max=args.epochs - args.warmup_epochs, eta_min=args.eta_min
+    )
+    scheduler = SequentialLR(
+        optimizer, schedulers=[warmup_scheduler, cosine_scheduler],
+        milestones=[args.warmup_epochs]
+    )
 
     amp_enabled = bool(args.amp and device.startswith("cuda"))
     scaler = torch.cuda.amp.GradScaler(enabled=amp_enabled)
@@ -396,7 +409,7 @@ def main():
     log(f"Epochs      : {args.epochs}")
     log(f"Batch size  : {args.batch_size}")
     log(f"LR          : {args.lr} | Weight decay: {args.weight_decay}")
-    log(f"Scheduler   : StepLR(step={args.step_size}, gamma={args.gamma})")
+    log(f"Scheduler   : Warmup({args.warmup_epochs}ep) + CosineAnnealing(eta_min={args.eta_min})")
     log(f"Mask ratio  : {args.mask_ratio}")
     log(f"Save path   : {args.save_path}")
     log("-" * 60)

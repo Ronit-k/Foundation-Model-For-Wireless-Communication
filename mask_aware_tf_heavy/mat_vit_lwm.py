@@ -158,7 +158,7 @@ class ATB(nn.Module):
     across deep networks.
     """
 
-    def __init__(self, dim: int, heads: int = 4, win: int = 4, init_values: float = 1e-4):
+    def __init__(self, dim: int, heads: int = 4, win: int = 4, init_values: float = 1e-2):
         super().__init__()
         self.attn = WindowMHA(dim, heads=heads, win=win)
         self.fc = nn.Conv2d(dim * 2, dim, 1)                 # fuse concat
@@ -196,14 +196,13 @@ class ATB(nn.Module):
 
 class MATStage(nn.Module):
     """
-    MAT Stage containing 3 ATBs and a localized 3x3 Conv2d, wrapped in a LayerScaled
-    residual connection. This prevents exponential variance explosion across deep features.
+    MAT Stage containing 2 ATBs and a localized 3x3 Conv2d, wrapped in a LayerScaled
+    residual connection. Reduced from 3→2 ATBs for better convergence at 100 epochs.
     """
-    def __init__(self, dim: int, heads: int = 4, win: int = 4, init_values: float = 1e-4):
+    def __init__(self, dim: int, heads: int = 4, win: int = 4, init_values: float = 1e-2):
         super().__init__()
         self.block1 = ATB(dim, heads=heads, win=win, init_values=init_values)
         self.block2 = ATB(dim, heads=heads, win=win, init_values=init_values)
-        self.block3 = ATB(dim, heads=heads, win=win, init_values=init_values)
         self.conv = nn.Conv2d(dim, dim, 3, padding=1)
         self.gamma_stage = nn.Parameter(init_values * torch.ones(1, dim, 1, 1))
 
@@ -213,12 +212,10 @@ class MATStage(nn.Module):
         Alternates the shifted windows to ensure cross-window communication:
           block1: shift=False
           block2: shift=shift (argument)
-          block3: shift=False
         """
         identity = x
         x = self.block1(x, valid_mask, shift=False)
         x = self.block2(x, valid_mask, shift=shift)
-        x = self.block3(x, valid_mask, shift=False)
         x = self.conv(x)
         return identity + self.gamma_stage * x
 

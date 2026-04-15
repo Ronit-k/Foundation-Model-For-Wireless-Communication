@@ -1,11 +1,3 @@
-
----------------------------- training Details ----------------------------
-Model: MAT-PSEUDO-LWM-CA (light) (secnn)
-Dataset Size: 519636, shape: torch.Size([519636, 64])
-epochs: 30, batch size: 32, input type: cls_emb
-task: Beam Prediction
-Split Ratio: 0.005 | Test Accuracy: 62.85% | Test F1: 0.6195
-
 ---------------------------- training Details ----------------------------
 Model: MAT-PSEUDO-LWM-CA (light) (secnn)
 Dataset Size: 519636, shape: torch.Size([519636, 64])
