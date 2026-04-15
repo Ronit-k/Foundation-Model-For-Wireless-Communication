@@ -76,7 +76,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size",   type=int,   default=64)
     parser.add_argument("--train-ratio",  type=float, default=0.8)
     parser.add_argument("--val-ratio",    type=float, default=0.2)
-    parser.add_argument("--lr",           type=float, default=5e-4)
+    parser.add_argument("--lr",           type=float, default=3e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-5)
     parser.add_argument("--warmup-epochs", type=int,  default=5)
     parser.add_argument("--eta-min",     type=float, default=1e-6)
