@@ -176,11 +176,6 @@ class ATB(nn.Module):
         nn.init.dirac_(self.fc.weight[:, :dim, :, :])
         nn.init.zeros_(self.fc.weight[:, dim:, :, :])
         nn.init.zeros_(self.fc.bias)
-        # 2. Zero-initialize the final layers in residual branches
-        nn.init.zeros_(self.mlp[-1].weight)
-        nn.init.zeros_(self.mlp[-1].bias)
-        nn.init.zeros_(self.local_conv.weight)
-        nn.init.zeros_(self.local_conv.bias)
 
     def forward(self, x: torch.Tensor, valid_mask: torch.Tensor,
                 shift: bool = False) -> torch.Tensor:
@@ -216,10 +211,6 @@ class MATStage(nn.Module):
         self.block2 = ATB(dim, heads=heads, win=win, init_values=init_values)
         self.conv = nn.Conv2d(dim, dim, 3, padding=1)
         self.gamma_stage = nn.Parameter(init_values * torch.ones(1, dim, 1, 1))
-
-        # --- Stable Identity Initialization Protocol ---
-        nn.init.zeros_(self.conv.weight)
-        nn.init.zeros_(self.conv.bias)
 
     def forward(self, x: torch.Tensor, valid_mask: torch.Tensor,
                 shift: bool = False) -> torch.Tensor:
