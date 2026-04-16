@@ -172,9 +172,9 @@ class ATB(nn.Module):
         self.gamma_conv = nn.Parameter(init_values * torch.ones(1, dim, 1, 1))
 
         # --- Stable Identity Initialization Protocol ---
-        # 1. Make self.fc act as an identity for 'x' and ignore 'a' at epoch 0
+        # 1. Make self.fc act as an identity for 'x', while allowing the attention
+        #    outputs 'a' to learn immediately via default Kaiming initialization.
         nn.init.dirac_(self.fc.weight[:, :dim, :, :])
-        nn.init.zeros_(self.fc.weight[:, dim:, :, :])
         nn.init.zeros_(self.fc.bias)
 
     def forward(self, x: torch.Tensor, valid_mask: torch.Tensor,
