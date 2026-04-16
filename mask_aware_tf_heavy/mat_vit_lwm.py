@@ -219,11 +219,10 @@ class MATStage(nn.Module):
           block1: shift=False
           block2: shift=shift (argument)
         """
-        identity = x
         x = self.block1(x, valid_mask, shift=False)
         x = self.block2(x, valid_mask, shift=shift)
-        x = self.conv(x)
-        return identity + self.gamma_stage * x
+        x = x + self.gamma_stage * self.conv(x)
+        return x
 
 
 # =============================================================================
