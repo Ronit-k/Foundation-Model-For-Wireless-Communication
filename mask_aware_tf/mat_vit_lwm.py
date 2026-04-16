@@ -146,7 +146,27 @@ class WindowMHA(nn.Module):
 
 
 # =============================================================================
-# Adjusted Transformer Block (ATB) — from MAT, no LayerNorm
+# Normalization: Dynamic Tanh (Mask-Aware & Leak-Proof)
+# =============================================================================
+
+class DynamicTanh2d(nn.Module):
+    """
+    Dynamic Tanh normalizer for spatial tensors (B, C, H, W).
+    Bounds activations to prevent exploding variance without causing spatial
+    mask leakage that standard LayerNorm/InstanceNorm would create.
+    """
+    def __init__(self, channels: int):
+        super().__init__()
+        # Learnable scale parameter per channel
+        self.scale = nn.Parameter(torch.ones(1, channels, 1, 1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Compute normalized bounded activation
+        return self.scale * torch.tanh(x / (self.scale.abs() + 1e-6))
+
+
+# =============================================================================
+# Adjusted Transformer Block (ATB) — from MAT, Dynamic Tanh Normalized
 # =============================================================================
 
 class ATB(nn.Module):
@@ -159,13 +179,16 @@ class ATB(nn.Module):
 
     def __init__(self, dim: int, heads: int = 4, win: int = 4):
         super().__init__()
+        self.norm1 = DynamicTanh2d(dim)
         self.attn = WindowMHA(dim, heads=heads, win=win)
         self.fc = nn.Conv2d(dim * 2, dim, 1)                 # fuse concat
+        self.norm2 = DynamicTanh2d(dim)
         self.mlp = nn.Sequential(
             nn.Conv2d(dim, dim * 3, 1),
             nn.GELU(),
             nn.Conv2d(dim * 3, dim, 1),
         )
+        self.norm3 = DynamicTanh2d(dim)
         self.local_conv = nn.Conv2d(dim, dim, 3, padding=1)   # local context
 
     def forward(self, x: torch.Tensor, valid_mask: torch.Tensor,
@@ -179,11 +202,11 @@ class ATB(nn.Module):
         Returns:
             x: (B, C, H, W) output features.
         """
-        a = self.attn(x, valid_mask, shift=shift)
+        a = self.attn(self.norm1(x), valid_mask, shift=shift)
         x = torch.cat([x, a], dim=1)                          # channel concat
         x = self.fc(x)                                        # fuse
-        x = x + self.mlp(x)                                   # feedforward
-        x = x + self.local_conv(x)                             # local branch
+        x = x + self.mlp(self.norm2(x))                       # feedforward
+        x = x + self.local_conv(self.norm3(x))                 # local branch
         return x
 
 
