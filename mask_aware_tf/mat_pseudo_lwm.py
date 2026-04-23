@@ -313,6 +313,11 @@ class MATPseudoLWM(nn.Module):
             nn.GELU(),
         )
 
+        # ── Learnable 2D positional embedding ─────────────────────────────
+        self.pos_embed = nn.Parameter(
+            torch.randn(1, d_model, grid_h, grid_w) * 0.02
+        )
+
         # ── 3-stage ATB body (4×4 windows on 8×16 grid) ─────────────────
         self.stage1 = ATB(d_model, heads=heads, win=win)
         self.stage2 = ATB(d_model, heads=heads, win=win)
@@ -415,6 +420,7 @@ class MATPseudoLWM(nn.Module):
 
         # ── Step 1: Convolutional stem ────────────────────────────────────
         x_2d = self.conv_stem(channels)                        # (B, d_model, 8, 16)
+        x_2d = x_2d + self.pos_embed                           # add positional info
 
         # ── Inference mode ───────────────────────────────────────────────
         if self.gen_raw:

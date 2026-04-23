@@ -75,9 +75,10 @@ model = MATPseudoLWM(gen_raw=False, snr_db=None, mask_ratio=0.15)
 n_params = sum(p.numel() for p in model.parameters())
 print(f"  ✓ Model built — {n_params:,} parameters")
 
-# Verify no pos_embed exists
-assert not hasattr(model, 'pos_embed'), "pos_embed should be removed!"
-print(f"  ✓ No positional embeddings (MAT-aligned)")
+# Verify pos_embed exists (2D spatial positional embedding)
+assert hasattr(model, 'pos_embed'), "pos_embed should exist!"
+assert model.pos_embed.shape == (1, 64, 8, 16), f"pos_embed shape: {model.pos_embed.shape}"
+print(f"  ✓ 2D positional embedding: {tuple(model.pos_embed.shape)}")
 
 # Verify no patch_proj exists
 assert not hasattr(model, 'patch_proj'), "patch_proj should be replaced by conv_stem!"
