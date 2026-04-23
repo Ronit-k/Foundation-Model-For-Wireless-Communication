@@ -1,25 +1,182 @@
 # =============================================================================
 # mat_pseudo_lwm.py — MAT Pseudo-Grid LWM (Method 2: 8×16 Pseudo-Grid)
 #
-# Preserves LWM's 128-patch tokenization while enabling MAT's 2D spatial
-# attention via an 8×16 pseudo-grid reshape.
+# Aligns with the MAT paper architecture:
+#   - Convolutional stem (no linear patch projection or positional embeddings)
+#   - Mask-aware 2D spatial attention on the 8×16 pseudo-grid
+#   - Continuous mask updating after every ATB stage
 #
 # Data flow:
-#   (B,2,32,32) → flatten → (B,128,16) → mask 15% → Linear(16→64) + PosEmb
-#   → (B,128,64) → reshape → (B,64,8,16) → 3-stage ATB → reshape back
-#   → (B,128,64) → gather masked → Linear(64→16) → MSE vs raw patches
+#   (B,2,32,32) → ConvStem → (B,d_model,8,16) → spatial mask on grid
+#   → 3-stage ATB (mask thawed after each stage) → decoder → MSE on masked
 #
 # Inference:
-#   - CLS embedding:     GAP on pseudo-grid → (B, 64)
-#   - Channel embedding: flattened sequence  → (B, 128, 64)
+#   - CLS embedding:     GAP on pseudo-grid → (B, d_model)
+#   - Channel embedding: flattened sequence  → (B, 128, d_model)
 # =============================================================================
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Reuse ATB and WindowMHA from Method 1
-from .mat_vit_lwm import ATB, WindowMHA
+# =============================================================================
+# Window Multi-Head Attention (MCA) — from MAT
+# =============================================================================
+
+class WindowMHA(nn.Module):
+    """
+    Multi-Head Contextual Attention with shifted windows.
+
+    Invalid (masked) tokens receive a large negative bias (``-tau``) so they
+    are effectively ignored by the softmax, implementing the dynamic mask-aware
+    strategy from the MAT paper.
+    """
+
+    def __init__(self, dim: int, heads: int = 4, win: int = 4):
+        super().__init__()
+        self.dim = dim
+        self.heads = heads
+        self.win = win
+        self.to_qkv = nn.Linear(dim, dim * 3, bias=False)
+        self.proj = nn.Linear(dim, dim, bias=False)
+
+    def forward(self, x: torch.Tensor, valid_mask: torch.Tensor,
+                shift: bool = False, tau: float = 100.0) -> torch.Tensor:
+        """
+        Args:
+            x:          (B, C, H, W) feature map.
+            valid_mask: (B, 1, H, W) binary mask (1=valid, 0=masked).
+            shift:      Whether to apply cyclic shift (shifted windows).
+            tau:        Penalty magnitude for invalid tokens.
+
+        Returns:
+            out: (B, C, H, W) attention output.
+        """
+        N, C, H, W = x.shape
+        w = self.win
+
+        # Optional cyclic shift for shifted windows
+        if shift:
+            s = w // 2
+            x = torch.roll(x, shifts=(s, s), dims=(2, 3))
+            valid_mask = torch.roll(valid_mask, shifts=(s, s), dims=(2, 3))
+
+        # Partition into non-overlapping windows
+        assert H % w == 0 and W % w == 0, \
+            f"Spatial dims ({H},{W}) must be divisible by window size {w}"
+
+        # [N, C, H/w, w, W/w, w] → [N, C, nH, nW, w, w]
+        xw = x.unfold(2, w, w).unfold(3, w, w)              # [N,C,nH,nW,w,w]
+        xw = xw.contiguous().view(N, C, -1, w * w)           # [N,C,nw,wsq]
+        xw = xw.permute(0, 2, 3, 1)                          # [N,nw,wsq,C]
+        nw = xw.size(1)
+
+        # QKV projection
+        qkv = self.to_qkv(xw).chunk(3, dim=-1)               # 3 × [N,nw,wsq,C]
+
+        def reshape(z):
+            B, NW, S, D = z.shape
+            Hh = self.heads
+            return z.view(B * NW, S, Hh, D // Hh).permute(0, 2, 1, 3)  # [B*NW,heads,S,dk]
+
+        q, k, v = map(reshape, qkv)
+        dk = q.size(-1)
+
+        # Scaled dot-product attention
+        attn = (q @ k.transpose(-2, -1)) / (dk ** 0.5)       # [B*NW,heads,S,S]
+
+        # Build mask-aware bias: invalid keys get -tau penalty
+        vm = valid_mask.unfold(2, w, w).unfold(3, w, w)       # [N,1,nH,nW,w,w]
+        vm = vm.contiguous().view(N, -1, 1, w * w)            # [N,nw,1,S]
+        bias = (1.0 - vm) * (-tau)                            # [N,nw,1,S]
+        bias = bias.repeat_interleave(self.heads, dim=2)      # [N,nw,heads,S]
+        bias = bias.view(N * nw, self.heads, 1, w * w)        # align with attn
+        attn = attn + bias
+
+        attn = attn.softmax(dim=-1)
+        out = attn @ v                                         # [B*NW,heads,S,dk]
+
+        # Merge heads and fold windows back
+        out = out.permute(0, 2, 1, 3).contiguous().view(N * nw, w * w, self.dim)
+        out = self.proj(out)                                   # [N*nw, wsq, C]
+
+        # Reshape back to spatial
+        out = out.view(N, nw, w * w, C).permute(0, 3, 1, 2)   # [N,C,nw,wsq]
+        out = out.view(N, C, H // w, W // w, w, w)
+        out = out.permute(0, 1, 2, 4, 3, 5).contiguous()
+        out = out.view(N, C, H, W)
+
+        # Reverse cyclic shift
+        if shift:
+            s = w // 2
+            out = torch.roll(out, shifts=(-s, -s), dims=(2, 3))
+
+        return out
+
+
+# =============================================================================
+# Normalization: Dynamic Tanh (Mask-Aware & Leak-Proof)
+# =============================================================================
+
+class DynamicTanh2d(nn.Module):
+    """
+    Dynamic Tanh normalizer for spatial tensors (B, C, H, W).
+    Bounds activations to prevent exploding variance without causing spatial
+    mask leakage that standard LayerNorm/InstanceNorm would create.
+    """
+    def __init__(self, channels: int):
+        super().__init__()
+        # Learnable scale parameter per channel
+        self.scale = nn.Parameter(torch.ones(1, channels, 1, 1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Compute normalized bounded activation
+        return self.scale * torch.tanh(x / (self.scale.abs() + 1e-6))
+
+
+# =============================================================================
+# Adjusted Transformer Block (ATB) — from MAT, Dynamic Tanh Normalized
+# =============================================================================
+
+class ATB(nn.Module):
+    """
+    Adjusted Transformer Block: attention → concat → 1×1 FC → MLP + local conv.
+
+    No LayerNorm is used, following the user specification and the original
+    MAT design for inpainting where BN/LN can leak mask information.
+    """
+
+    def __init__(self, dim: int, heads: int = 4, win: int = 4):
+        super().__init__()
+        self.norm1 = DynamicTanh2d(dim)
+        self.attn = WindowMHA(dim, heads=heads, win=win)
+        self.fc = nn.Conv2d(dim * 2, dim, 1)                 # fuse concat
+        self.norm2 = DynamicTanh2d(dim)
+        self.mlp = nn.Sequential(
+            nn.Conv2d(dim, dim * 3, 1),
+            nn.GELU(),
+            nn.Conv2d(dim * 3, dim, 1),
+        )
+        self.norm3 = DynamicTanh2d(dim)
+        self.local_conv = nn.Conv2d(dim, dim, 3, padding=1)   # local context
+
+    def forward(self, x: torch.Tensor, valid_mask: torch.Tensor,
+                shift: bool = False) -> torch.Tensor:
+        """
+        Args:
+            x:          (B, C, H, W) input features.
+            valid_mask: (B, 1, H, W) validity mask.
+            shift:      Whether to use shifted windows.
+
+        Returns:
+            x: (B, C, H, W) output features.
+        """
+        a = self.attn(self.norm1(x), valid_mask, shift=shift)
+        x = torch.cat([x, a], dim=1)                          # channel concat
+        x = self.fc(x)                                        # fuse
+        x = x + self.mlp(self.norm2(x))                       # feedforward
+        x = x + self.local_conv(self.norm3(x))                 # local branch
+        return x
 
 
 # =============================================================================
@@ -96,22 +253,26 @@ def mask_patches(patches: torch.Tensor,
 
 class MATPseudoLWM(nn.Module):
     """
-    Hybrid MAT–LWM model using the 8×16 pseudo-grid approach (Method 2).
+    Hybrid MAT–LWM model using the 8×16 pseudo-grid approach (Method 2),
+    aligned with the MAT paper architecture.
 
-    Preserves LWM's 128-patch tokenization (patches of length 16) and reshapes
-    the 1D sequence into a 2D pseudo-grid for mask-aware spatial attention.
+    Key design choices (MAT-aligned):
+      - **Convolutional stem** instead of linear patch projection: two
+        stacked 3×3 Conv2d layers downsample (B,2,32,32) → (B,d_model,8,16).
+      - **No positional embeddings**: the conv stem and per-ATB local 3×3
+        convolutions provide implicit relative positional encoding.
+      - **Continuous mask updating**: the spatial validity mask is "thawed"
+        after every ATB stage, not just once.
 
     Training mode (``gen_raw=False``):
-        Tokenize → mask → embed → 2D reshape → ATB → 1D reshape → decode
-        → MSE loss on masked patches.
+        ConvStem → spatial mask on 8×16 grid → 3-stage ATB (mask thawed
+        after each stage) → decoder → MSE loss on masked grid cells.
 
     Inference mode (``gen_raw=True``):
-        Tokenize → embed → 2D reshape → ATB → embeddings.
+        ConvStem → 3-stage ATB (all-valid mask) → embeddings.
 
     Args:
-        patch_size:  Length of each patch.  Default 16.
-        d_model:     Embedding dimension.   Default 64.
-        n_patches:   Number of patches.     Default 128 (= 8 × 16 grid).
+        d_model:     Embedding / feature-map channels.  Default 64.
         grid_h:      Pseudo-grid height.    Default 8.
         grid_w:      Pseudo-grid width.     Default 16.
         heads:       Attention heads.       Default 4.
@@ -123,9 +284,7 @@ class MATPseudoLWM(nn.Module):
 
     def __init__(
         self,
-        patch_size: int = 16,
         d_model: int = 64,
-        n_patches: int = 128,
         grid_h: int = 8,
         grid_w: int = 16,
         heads: int = 4,
@@ -135,24 +294,23 @@ class MATPseudoLWM(nn.Module):
         snr_db: float | None = None,
     ):
         super().__init__()
-        assert grid_h * grid_w == n_patches, \
-            f"Grid {grid_h}×{grid_w} != {n_patches} patches"
-
-        self.patch_size = patch_size
         self.d_model = d_model
-        self.n_patches = n_patches
+        self.n_patches = grid_h * grid_w                       # 128
         self.grid_h = grid_h
         self.grid_w = grid_w
         self.mask_ratio = mask_ratio
         self.gen_raw = gen_raw
         self.snr_db = snr_db
 
-        # ── Patch embedding: 16 → 64 ────────────────────────────────────
-        self.patch_proj = nn.Linear(patch_size, d_model)
-
-        # ── Positional encoding (learnable) ──────────────────────────────
-        self.pos_embed = nn.Parameter(
-            torch.randn(1, n_patches, d_model) * 0.02
+        # ── Convolutional stem: (B,2,32,32) → (B,d_model,8,16) ──────────
+        # Layer 1: stride (2,2) → 32×32 → 16×16, channels: 2 → d_model//2
+        # Layer 2: stride (2,1) → 16×16 → 8×16,  channels: d_model//2 → d_model
+        mid_ch = d_model // 2
+        self.conv_stem = nn.Sequential(
+            nn.Conv2d(2, mid_ch, kernel_size=3, stride=(2, 2), padding=1),
+            nn.GELU(),
+            nn.Conv2d(mid_ch, d_model, kernel_size=3, stride=(2, 1), padding=1),
+            nn.GELU(),
         )
 
         # ── 3-stage ATB body (4×4 windows on 8×16 grid) ─────────────────
@@ -160,8 +318,25 @@ class MATPseudoLWM(nn.Module):
         self.stage2 = ATB(d_model, heads=heads, win=win)
         self.stage3 = ATB(d_model, heads=heads, win=win)
 
-        # ── Decoder: project masked embeddings back to patch space ───────
-        self.decoder = nn.Linear(d_model, patch_size)
+        # ── Decoder head: project grid features back to 2-channel space ──
+        # Upsample (B,d_model,8,16) → (B,2,32,32) for pixel-level loss
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(d_model, mid_ch, kernel_size=3,
+                               stride=(2, 1), padding=1, output_padding=(1, 0)),
+            nn.GELU(),
+            nn.ConvTranspose2d(mid_ch, 2, kernel_size=3,
+                               stride=(2, 2), padding=1, output_padding=1),
+        )
+
+    # ---- helpers --------------------------------------------------------
+    def _thaw_mask(self, vm: torch.Tensor, win: int) -> torch.Tensor:
+        """
+        Relax validity mask: if *any* cell inside a ``win×win`` window is
+        valid, mark the entire window valid.  Returns mask at the same
+        spatial resolution as ``vm``.
+        """
+        vm_pooled = (F.max_pool2d(vm, win, win) > 0).float()   # (B,1,H/w,W/w)
+        return vm_pooled.repeat_interleave(win, -1).repeat_interleave(win, -2)
 
     # ---- Noise injection ------------------------------------------------
     @staticmethod
@@ -180,6 +355,43 @@ class MATPseudoLWM(nn.Module):
         out[:, 1] = imag + torch.randn_like(imag) * noise_std
         return out
 
+    # ---- Spatial mask generation ----------------------------------------
+    @staticmethod
+    def _generate_spatial_mask(
+        batch_size: int, h: int, w: int,
+        mask_ratio: float, device: torch.device,
+    ) -> torch.Tensor:
+        """
+        Generate a random binary spatial mask on the pseudo-grid.
+
+        Uses LWM-compatible symmetric masking: the same row positions in
+        the top half (real, rows 0-3) and bottom half (imag, rows 4-7)
+        are masked together so real/imag patches stay paired.
+
+        Args:
+            batch_size: Number of samples.
+            h, w:       Grid spatial dimensions (8, 16).
+            mask_ratio: Fraction of grid cells to mask.
+            device:     Target device.
+
+        Returns:
+            mask: (B, 1, h, w) float tensor.  1 = valid, 0 = masked.
+        """
+        half_h = h // 2                                        # 4
+        n_cells_half = half_h * w                              # 64
+        n_masked = max(1, int(mask_ratio * n_cells_half))
+
+        mask = torch.ones(batch_size, 1, h, w, device=device)
+        for i in range(batch_size):
+            perm = torch.randperm(n_cells_half, device=device)[:n_masked]
+            rows = perm // w
+            cols = perm % w
+            # Symmetric masking: same positions in real (top) and imag (bottom)
+            mask[i, 0, rows, cols] = 0.0
+            mask[i, 0, rows + half_h, cols] = 0.0
+
+        return mask
+
     # ---- Forward --------------------------------------------------------
     def forward(self, channels: torch.Tensor):
         """
@@ -187,13 +399,13 @@ class MATPseudoLWM(nn.Module):
             channels: (B, 2, 32, 32) real/imag wireless channel data.
 
         Returns (training, gen_raw=False):
-            loss:           Scalar MSE loss on masked patches.
-            logits_masked:  (B, n_masks, 16) predicted masked patches.
-            target_masked:  (B, n_masks, 16) ground-truth masked patches.
+            loss:           Scalar MSE loss on masked grid cells.
+            pred_masked:    (N_masked,) predicted values at masked positions.
+            target_masked:  (N_masked,) ground-truth values at masked positions.
 
         Returns (inference, gen_raw=True):
-            cls_embedding:     (B, 64) global average pooled.
-            channel_embedding: (B, 128, 64) full sequence embeddings.
+            cls_embedding:     (B, d_model)  global average pooled.
+            channel_embedding: (B, 128, d_model) full sequence embeddings.
         """
         B = channels.size(0)
 
@@ -201,73 +413,68 @@ class MATPseudoLWM(nn.Module):
         if self.snr_db is not None:
             channels = self._add_complex_noise_ri(channels, self.snr_db)
 
-        # ── Step 1: LWM patching ─────────────────────────────────────────
-        patches = channels_to_patches(channels, self.patch_size)  # (B, 128, 16)
+        # ── Step 1: Convolutional stem ────────────────────────────────────
+        x_2d = self.conv_stem(channels)                        # (B, d_model, 8, 16)
 
         # ── Inference mode ───────────────────────────────────────────────
         if self.gen_raw:
-            # Embed all patches (no masking)
-            x = self.patch_proj(patches) + self.pos_embed      # (B, 128, 64)
-
-            # 2D Bridge: (B, 128, 64) → (B, 64, 8, 16)
-            x_2d = x.permute(0, 2, 1).view(B, self.d_model, self.grid_h, self.grid_w)
             vm = torch.ones(B, 1, self.grid_h, self.grid_w,
-                            device=x.device, dtype=x.dtype)
+                            device=x_2d.device, dtype=x_2d.dtype)
 
-            # 3-stage ATB body
+            # 3-stage ATB body (full validity — no masking)
             x_2d = self.stage1(x_2d, vm, shift=False)
             x_2d = self.stage2(x_2d, vm, shift=True)
             x_2d = self.stage3(x_2d, vm, shift=False)
 
-            # CLS embedding: GAP → (B, 64)
+            # CLS embedding: GAP → (B, d_model)
             cls_emb = x_2d.mean(dim=(2, 3))
 
-            # Channel embedding: (B, 64, 8, 16) → (B, 128, 64)
+            # Channel embedding: (B, d_model, 8, 16) → (B, 128, d_model)
             channel_emb = x_2d.view(B, self.d_model, -1).permute(0, 2, 1)
 
             return cls_emb, channel_emb
 
         # ── Training mode ────────────────────────────────────────────────
-        # Step 2: Mask 15% of patches
-        masked_patches, mask_1d, masked_pos, masked_tokens = mask_patches(
-            patches, mask_ratio=self.mask_ratio
-        )
-        # masked_patches: (B, 128, 16) with masked positions zeroed
-        # mask_1d:        (B, 128)     binary mask
-        # masked_pos:     (B, n_masks) indices
-        # masked_tokens:  (B, n_masks, 16) ground truth
+        # Step 2: Generate spatial mask on the 8×16 grid
+        mask = self._generate_spatial_mask(
+            B, self.grid_h, self.grid_w,
+            self.mask_ratio, channels.device,
+        )                                                      # (B, 1, 8, 16)
 
-        # Step 3: Linear embedding + positional encoding
-        x = self.patch_proj(masked_patches) + self.pos_embed   # (B, 128, 64)
+        # Zero out masked positions in feature grid
+        x_masked = x_2d * mask                                 # (B, d_model, 8, 16)
+        vm = mask.clone()
 
-        # Step 4: 2D Bridge — reshape to pseudo-grid
-        x_2d = x.permute(0, 2, 1).view(B, self.d_model, self.grid_h, self.grid_w)
-        # Reshape mask: (B, 128) → (B, 1, 8, 16)
-        vm = mask_1d.view(B, 1, self.grid_h, self.grid_w)
+        # Step 3: 3-stage ATB body with continuous mask updating ──────────
+        # Stage 1
+        x_masked = self.stage1(x_masked, vm, shift=False)
+        w1 = self.stage1.attn.win
+        vm = self._thaw_mask(vm, w1)                           # thaw after stage 1
 
-        # Step 5: 3-stage ATB body with mask-aware attention
-        x_2d = self.stage1(x_2d, vm, shift=False)
+        # Stage 2
+        x_masked = self.stage2(x_masked, vm, shift=True)
+        w2 = self.stage2.attn.win
+        vm = self._thaw_mask(vm, w2)                           # thaw after stage 2
 
-        # Dynamic mask update: relax validity over windows after stage 1
-        w = self.stage1.attn.win
-        vm_updated = (F.max_pool2d(vm, w, w) > 0).float()
-        vm = vm_updated.repeat_interleave(w, -1).repeat_interleave(w, -2)
+        # Stage 3 (uses the doubly-thawed mask)
+        x_masked = self.stage3(x_masked, vm, shift=False)
 
-        x_2d = self.stage2(x_2d, vm, shift=True)
-        x_2d = self.stage3(x_2d, vm, shift=False)
+        # Step 4: Decode back to channel space ────────────────────────────
+        pred = self.decoder(x_masked)                          # (B, 2, 32, 32)
 
-        # Step 6: Reverse 2D Bridge → (B, 128, 64)
-        x_seq = x_2d.view(B, self.d_model, -1).permute(0, 2, 1)  # (B, 128, 64)
+        # Step 5: Upsample mask to full resolution for loss computation ───
+        # mask is (B, 1, 8, 16) → need (B, 1, 32, 32)
+        mask_full = F.interpolate(
+            mask, size=(32, 32), mode='nearest',
+        )                                                      # (B, 1, 32, 32)
 
-        # Step 7: Gather only the masked embeddings
-        n_masks = masked_pos.size(1)
-        gather_idx = masked_pos.unsqueeze(-1).expand(-1, -1, self.d_model)
-        masked_emb = torch.gather(x_seq, 1, gather_idx)       # (B, n_masks, 64)
+        # MSE only on masked pixels (where mask_full == 0)
+        mask_2ch = mask_full.expand_as(channels)               # (B, 2, 32, 32)
+        inverted = (mask_2ch == 0)                             # masked positions
 
-        # Step 8: Decode to patch space
-        logits_masked = self.decoder(masked_emb)               # (B, n_masks, 16)
+        pred_masked = pred[inverted]
+        target_masked = channels[inverted]
 
-        # Step 9: MSE loss on masked patches
-        loss = F.mse_loss(logits_masked, masked_tokens)
+        loss = F.mse_loss(pred_masked, target_masked)
 
-        return loss, logits_masked, masked_tokens
+        return loss, pred_masked, target_masked
