@@ -42,9 +42,10 @@ def prepare_for_lwm(data, device, batch_size=64, shuffle=False):
 
     input_ids, masked_tokens, masked_pos = zip(*data)
     
-    input_ids_tensor = torch.tensor(input_ids, device=device).float() 
-    masked_tokens_tensor = torch.tensor(masked_tokens, device=device).float() 
-    masked_pos_tensor = torch.tensor(masked_pos, device=device).long()
+    # Store dataset on CPU to avoid CUDA OOM
+    input_ids_tensor = torch.tensor(np.array(input_ids), device='cpu').float() 
+    masked_tokens_tensor = torch.tensor(np.array(masked_tokens), device='cpu').float() 
+    masked_pos_tensor = torch.tensor(np.array(masked_pos), device='cpu').long()
 
     dataset = TensorDataset(input_ids_tensor, masked_tokens_tensor, masked_pos_tensor)
     
@@ -53,35 +54,34 @@ def prepare_for_lwm(data, device, batch_size=64, shuffle=False):
 def evaluate(model, dataloader):
 
     model.eval()
+    device = next(model.parameters()).device
     running_loss = 0.0
     outputs = []
     criterionMCM = nn.MSELoss()
     
     with torch.no_grad():
         for idx, batch in enumerate(dataloader):
-            input_ids = batch[0]
-            masked_tokens = batch[1]
-            masked_pos = batch[2]
+            input_ids = batch[0].to(device)
+            masked_tokens = batch[1].to(device)
+            masked_pos = batch[2].to(device)
 
             logits_lm, output = model(input_ids, masked_pos)
             
             output_batch_preproc = output 
-            outputs.append(output_batch_preproc)
+            outputs.append(output_batch_preproc.cpu())
 
             loss_lm = criterionMCM(logits_lm, masked_tokens)
             loss = loss_lm / torch.var(masked_tokens)  
             running_loss += loss.item()
             
     average_loss = running_loss / len(dataloader)
-    #output_total = torch.cat(outputs, dim=0)
-    #Move tensors to CPU before concatenating to save GPU memory
-    output_total = torch.cat([x.cpu() for x in outputs], dim=0)
+    output_total = torch.cat(outputs, dim=0)
     
     return average_loss, output_total
 
 def create_raw_dataset(data, device):
     """Create a dataset for raw channel data."""
     input_ids, _, _ = zip(*data)
-    input_data = torch.tensor(input_ids, device=device)[:, 1:]  
+    input_data = torch.tensor(np.array(input_ids), device='cpu')[:, 1:]  
     return input_data.float()
     
