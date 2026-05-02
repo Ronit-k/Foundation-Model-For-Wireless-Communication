@@ -107,7 +107,7 @@ def plot_results():
     if save_query in ['yes', 'y']:
         # Ensure identical styling goes into the PNG file
         fig.savefig(f'Mat_pseudo_{choice}_benchmark.png', dpi=300, facecolor=fig.get_facecolor(), edgecolor='none')
-        print("Successfully saved to 'Mat_pseudo_{choice}_benchmark.png'")
+        print(f"Successfully saved to 'Mat_pseudo_{choice}_benchmark.png'")
     else:
         print("Plot not saved.")
 
