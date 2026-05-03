@@ -23,65 +23,77 @@ import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
 
-def lwm_inference(preprocessed_chs, input_type, lwm_model, device):
+def lwm_inference(preprocessed_chs, input_type, lwm_model, device, batch_size=64, load_data=False):
+    """Extract embeddings using the LWM model.
     
-    dataset = prepare_for_lwm(preprocessed_chs, device)
-    # Process data through LWM
-    lwm_loss, embedding_data = evaluate(lwm_model, dataset)
-    # print(f'LWM loss: {lwm_loss:.4f}')
+    Follows the same pattern as get_lwm_embeddings() in lwm_ca/benchmark.py:
+    tensors on CPU, batch-wise GPU transfer, immediate CPU output.
+    """
+    cache_dir = ".downstream_cache"
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_file = os.path.join(cache_dir, f"lwm_embeddings_{input_type}.pt")
+    
+    if load_data and os.path.exists(cache_file):
+        print(f"Loading cached embeddings from {cache_file}")
+        return torch.load(cache_file)
+        
+    input_ids, masked_tokens, masked_pos = zip(*preprocessed_chs)
+    dataset = TensorDataset(
+        torch.tensor(input_ids).float(),
+        torch.tensor(masked_tokens).float(),
+        torch.tensor(masked_pos).long(),
+    )
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+    outputs = []
+    lwm_model.eval()
+    running_loss = 0.0
+    criterionMCM = nn.MSELoss()
+    
+    with torch.no_grad():
+        for input_ids_batch, masked_tokens_batch, masked_pos_batch in loader:
+            input_ids_batch = input_ids_batch.to(device)
+            masked_tokens_batch = masked_tokens_batch.to(device)
+            masked_pos_batch = masked_pos_batch.to(device)
+            
+            logits_lm, output = lwm_model(input_ids_batch, masked_pos_batch)
+            outputs.append(output.cpu())
+            
+            loss_lm = criterionMCM(logits_lm, masked_tokens_batch)
+            loss = loss_lm / torch.var(masked_tokens_batch)
+            running_loss += loss.item()
+    
+    average_loss = running_loss / len(loader)
+    embedding_data = torch.cat(outputs, dim=0).float()
     
     if input_type == 'cls_emb':
         embedding_data = embedding_data[:, 0]
     elif input_type == 'channel_emb':  
         embedding_data = embedding_data[:, 1:]
+        
+    if load_data:
+        torch.save(embedding_data, cache_file)
+        print(f"Saved embeddings to {cache_file}")
     
-    dataset = embedding_data.float()
-    return dataset
+    return embedding_data
 
-def prepare_for_lwm(data, device, batch_size=64, shuffle=False):
-
-    input_ids, masked_tokens, masked_pos = zip(*data)
-    
-    # Store dataset on CPU to avoid CUDA OOM
-    input_ids_tensor = torch.tensor(np.array(input_ids), device='cpu').float() 
-    masked_tokens_tensor = torch.tensor(np.array(masked_tokens), device='cpu').float() 
-    masked_pos_tensor = torch.tensor(np.array(masked_pos), device='cpu').long()
-
-    dataset = TensorDataset(input_ids_tensor, masked_tokens_tensor, masked_pos_tensor)
-    
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
-
-def evaluate(model, dataloader):
-
-    model.eval()
-    device = next(model.parameters()).device
-    running_loss = 0.0
-    outputs = []
-    criterionMCM = nn.MSELoss()
-    
-    with torch.no_grad():
-        for idx, batch in enumerate(dataloader):
-            input_ids = batch[0].to(device)
-            masked_tokens = batch[1].to(device)
-            masked_pos = batch[2].to(device)
-
-            logits_lm, output = model(input_ids, masked_pos)
-            
-            output_batch_preproc = output 
-            outputs.append(output_batch_preproc.cpu())
-
-            loss_lm = criterionMCM(logits_lm, masked_tokens)
-            loss = loss_lm / torch.var(masked_tokens)  
-            running_loss += loss.item()
-            
-    average_loss = running_loss / len(dataloader)
-    output_total = torch.cat(outputs, dim=0)
-    
-    return average_loss, output_total
-
-def create_raw_dataset(data, device):
+def create_raw_dataset(data, device, load_data=False):
     """Create a dataset for raw channel data."""
+    cache_dir = ".downstream_cache"
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_file = os.path.join(cache_dir, "lwm_raw_data.pt")
+    
+    if load_data and os.path.exists(cache_file):
+        print(f"Loading cached raw data from {cache_file}")
+        return torch.load(cache_file)
+        
     input_ids, _, _ = zip(*data)
-    input_data = torch.tensor(np.array(input_ids), device='cpu')[:, 1:]  
-    return input_data.float()
+    input_data = torch.tensor(input_ids)[:, 1:]  
+    input_data_float = input_data.float()
+    
+    if load_data:
+        torch.save(input_data_float, cache_file)
+        print(f"Saved raw data to {cache_file}")
+        
+    return input_data_float
     

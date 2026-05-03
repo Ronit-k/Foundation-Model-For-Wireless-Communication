@@ -14,21 +14,21 @@ from torch.utils.data import DataLoader, random_split, TensorDataset
 import csv, json, time
 from sklearn.metrics import f1_score
 from tqdm import tqdm  # Progress bar
-from input_preprocess import tokenizer, create_labels, label_gen
+from input_preprocess import tokenizer, create_labels
 from lwm_model import lwm
 from inference import lwm_inference, create_raw_dataset
 plt.show = lambda: None
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Using",device)
-down_mdl = int(input("choose downstream model 0 for SECNN, 1 for ResCNN: "))
-down_choices = ['secnn', 'rescnn']
-down_choice = down_choices[down_mdl]
-
 #######SELECT INPUT##############################################
 # choose one: 'cls_emb', 'channel_emb', or 'raw'
 input_types = ['cls_emb', 'channel_emb', 'raw']
-selected_input_type = input_types[0] 
+selected_input_type = input_types[1] 
+
+down_mdl = int(input("choose downstream model 0 for SECNN, 1 for ResCNN: "))
+down_choices = ['secnn', 'rescnn']
+down_choice = down_choices[down_mdl]
 ################Select Tasks#####################################
 tasks = ['LoS/NLoS Classification', 'Beam Prediction']
 task = tasks[1] # Choose 0 for LoS/NLoS labels or 1 for beam prediction labels.
@@ -36,7 +36,6 @@ num_epochs = 30
 batch_size = 32  # Set a value (adjust as needed)
 print(
     "---------------------------- training Details ----------------------------\n"
-    f"Model: {down_choice.upper()}\n"
     f"epochs: {num_epochs}, "
     f"batch size: {batch_size}, "
     f"input type: {selected_input_type}\n"
@@ -57,50 +56,24 @@ print("selected scenarios: ")
 for i in selected_scenario_names: print(i, end=", ")
 
 snr_db = None
-
-print("Loading data from downstream cache...")
-save_dir = "../downstream_cache"
-manual_data = []
-all_labels = []
-
-for scenario_name in selected_scenario_names:
-    bs_idx = 3 if scenario_name in ['city_18_denver', 'city_15_indianapolis'] else 1
-    if "O1" in scenario_name and "3p5B" not in scenario_name:
-        bs_idx = 4
-        
-    n_ant_bs = 32
-    n_subcarriers = 32
-    
-    file_name = f"{save_dir}/{scenario_name}_ant{n_ant_bs}_sub{n_subcarriers}_bs{bs_idx}.npy"
-    print(f"Loading {file_name}...")
-    try:
-        data = np.load(file_name, allow_pickle=True).item()
-    except FileNotFoundError:
-        print(f"File {file_name} not found. Skipping.")
-        continue
-        
-    idxs = np.where(data['user']['LoS'] != -1)[0]
-    cleaned_channels = np.array(data['user']['channel'][idxs]) * 1e6
-    manual_data.extend(cleaned_channels)
-    
-    lbls = label_gen(task, data, scenario_name, n_beams=64)
-    all_labels.extend(lbls)
-
-print(f"Total loaded channels: {len(manual_data)}")
-
 preprocessed_chs = tokenizer(
     selected_scenario_names=selected_scenario_names,
-    manual_data=manual_data,
+    manual_data=None,
     gen_raw=True,
-    snr_db=snr_db
+    snr_db=snr_db,
+    load_data=True
 )
 
 lwm_model = lwm.from_pretrained(device=device)
 
 if selected_input_type in ['cls_emb', 'channel_emb']:
-    dataset = lwm_inference(preprocessed_chs, selected_input_type, lwm_model, device)
+    dataset = lwm_inference(preprocessed_chs, selected_input_type, lwm_model, device, batch_size=batch_size, load_data=True)
 else:
-    dataset = create_raw_dataset(preprocessed_chs, device)
+    dataset = create_raw_dataset(preprocessed_chs, device, load_data=True)
+
+# Free LWM model from GPU after extracting embeddings (like lwm_ca)
+del lwm_model
+torch.cuda.empty_cache()
 # At this point, `dataset` should be a torch Dataset yielding (data, target) pairs.
 
 # Initial log (Header)
@@ -120,7 +93,7 @@ with open("results.txt", "a") as f:
 print("\n\ninitiated results.txt with\n", message, '\n'*3)
 
 
-labels = torch.tensor(all_labels).long()
+labels = create_labels(task, selected_scenario_names, n_beams=64, load_data=True)
 print("using",selected_input_type,"for",task,"task")
 print("labels: ",
     type(labels),len(labels)
@@ -155,13 +128,10 @@ mapping = {
 input_type = selected_input_type  # use the same type as for data generation
 params = mapping.get(input_type, mapping[selected_input_type]) #change if chosen anything else
 n_beams = 64  # adjust as needed
-initial_lr = 0.001*32
+initial_lr = 0.001
 num_classes = n_beams + 1  # as defined in your code
 print(selected_input_type)
 
-# ----------------------------------
-# 1. SE LAYER
-# ----------------------------------
 class SELayer(nn.Module):
     def __init__(self, channel, reduction=16):
         super().__init__()
@@ -179,10 +149,6 @@ class SELayer(nn.Module):
         y = self.fc(y).view(b, c, 1)
         return x * y.expand_as(x)
 
-
-# ----------------------------------
-# 2. RESIDUAL BLOCK (WITH OPTIONAL SE)
-# ----------------------------------
 class SEResidualBlock(nn.Module):
     def __init__(self, in_c, out_c, stride=1, use_se=False):
         super().__init__()
@@ -209,7 +175,6 @@ class SEResidualBlock(nn.Module):
         out = self.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
 
-        # Apply SE attention (if enabled)
         out = self.se(out)
 
         out += identity
@@ -217,14 +182,10 @@ class SEResidualBlock(nn.Module):
 
         return out
 
-# ----------------------------------
-# 3. SECNN MAIN MODEL
-# ----------------------------------
 class SEResNet1D(nn.Module):
     def __init__(self, input_channels, sequence_length, num_classes):
         super().__init__()
 
-        # No early downsampling
         self.conv1 = nn.Conv1d(
             input_channels, 64,
             kernel_size=7, stride=1, padding=3, bias=False
@@ -232,19 +193,16 @@ class SEResNet1D(nn.Module):
         self.bn1 = nn.BatchNorm1d(64)
         self.relu = nn.ReLU(inplace=True)
 
-        # Stage 1 (No SE)
         self.layer1 = nn.Sequential(
             SEResidualBlock(64, 64),
             SEResidualBlock(64, 64)
         )
 
-        # Stage 2 (SE starts)
         self.layer2 = nn.Sequential(
             SEResidualBlock(64, 128, stride=2, use_se=True),
             SEResidualBlock(128, 128, use_se=True)
         )
 
-        # Stage 3 (SE)
         self.layer3 = nn.Sequential(
             SEResidualBlock(128, 256, stride=2, use_se=True),
             SEResidualBlock(256, 256, use_se=True)
@@ -253,7 +211,6 @@ class SEResNet1D(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.dropout = nn.Dropout(0.1)
 
-        # Infer FC size automatically
         with torch.no_grad():
             dummy = torch.zeros(1, input_channels, sequence_length)
             dummy = self._forward_conv(dummy)
@@ -270,16 +227,13 @@ class SEResNet1D(nn.Module):
         return x
 
     def forward(self, x):
-        # Input shape: [B, L, C]
-        x = x.transpose(1, 2)  # -> [B, C, L]
-
+        x = x.transpose(1, 2)  
         x = self._forward_conv(x)
         x = x.flatten(1)
         x = self.dropout(x)
-
         return self.fc(x)
 
-# Define Base Residual Block and the 1D CNN model.
+# Define Residual Block and the 1D CNN model.
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(ResidualBlock, self).__init__()
@@ -372,17 +326,6 @@ def plot_training_metrics(epochs, train_losses, val_losses, val_f1_scores, save_
     plt.show()
 
 matplotlib.use('Agg')
-
-photo_dir_prefix = "lwm_secnn" if down_choice == 'secnn' else "lwm_cnn"
-if selected_input_type == 'cls_emb':
-    photo_dir = os.path.join("photos", photo_dir_prefix, "cls")
-elif selected_input_type == 'channel_emb':
-    photo_dir = os.path.join("photos", photo_dir_prefix, "channel")
-else:
-    photo_dir = os.path.join("photos", photo_dir_prefix, selected_input_type)
-
-os.makedirs(photo_dir, exist_ok=True)
-
 # Define the split ratios to iterate over
 split_ratios = [0.005, 0.01, 0.05, 0.1, 0.2, 0.4]
 
@@ -398,7 +341,7 @@ for split_ratio in split_ratios:
     scheduler = MultiStepLR(optimizer, milestones=[15, 35], gamma=0.1)
 
     # Get DataLoaders for the current split_ratio
-    train_loader, val_loader, test_loader = get_data_loaders(dataset, labels, batch_size , train_ratio=split_ratio)
+    train_loader, val_loader, test_loader = get_data_loaders(dataset, labels, batch_size, train_ratio=split_ratio)
     criterion = nn.CrossEntropyLoss()
     train_losses = []
     val_losses = []
@@ -503,9 +446,14 @@ for split_ratio in split_ratios:
     # -----------------------------
     # Save plot
     # -----------------------------
+    model_folder = "lwm_cnn" if down_choice == "rescnn" else "lwm_secnn"
+    task_folder = "cls" if selected_input_type == "cls_emb" else ("channel" if selected_input_type == "channel_emb" else "raw")
+    photo_dir = os.path.join("photos", model_folder, task_folder)
+    os.makedirs(photo_dir, exist_ok=True)
+    
     fig = plt.figure()
     plot_training_metrics(epochs_list, train_losses, val_losses, val_f1_scores)
-    plot_path = os.path.join(photo_dir, f"1{selected_input_type}_{split_ratio}.png")
+    plot_path = os.path.join(photo_dir, f"{selected_input_type}_{split_ratio}.png")
     plt.savefig(plot_path, bbox_inches='tight')
     plt.close(fig)
     print(f"Plot saved as {plot_path}")

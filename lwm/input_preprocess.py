@@ -54,7 +54,7 @@ def scenarios_list():
     ])
 
 #%% Token Generation
-def tokenizer(selected_scenario_names=None, manual_data=None, gen_raw=True, snr_db=None):
+def tokenizer(selected_scenario_names=None, manual_data=None, gen_raw=True, snr_db=None, load_data=False, save_dir="../downstream_cache"):
     """
     Generates tokens by preparing and preprocessing the dataset.
 
@@ -76,7 +76,7 @@ def tokenizer(selected_scenario_names=None, manual_data=None, gen_raw=True, snr_
         # Patch generation or loading
         if isinstance(selected_scenario_names, str):
             selected_scenario_names = [selected_scenario_names]
-        deepmimo_data = [DeepMIMO_data_gen(scenario_name) for scenario_name in selected_scenario_names]
+        deepmimo_data = [DeepMIMO_data_gen(scenario_name, load_data=load_data, save_dir=save_dir) for scenario_name in selected_scenario_names]
         n_scenarios = len(selected_scenario_names)
         
         cleaned_deepmimo_data = [deepmimo_data_cleaning(deepmimo_data[scenario_idx]) for scenario_idx in range(n_scenarios)]
@@ -134,7 +134,7 @@ def patch_maker(original_ch, patch_size=16, norm_factor=1e6, snr_db=None):
     return patch
 
 #%% Data Generation for Scenario Areas
-def DeepMIMO_data_gen(scenario):
+def DeepMIMO_data_gen(scenario, load_data=False, save_dir="../downstream_cache"):
     scenario = str(scenario)
     """
     Generates or loads data for a given scenario.
@@ -150,11 +150,25 @@ def DeepMIMO_data_gen(scenario):
     import DeepMIMOv3
     
     parameters, row_column_users, n_ant_bs, n_ant_ue, n_subcarriers = get_parameters(scenario)
+    bs_idx = parameters['active_BS'][0]
+    file_name = f"{save_dir}/{scenario}_ant{n_ant_bs}_sub{n_subcarriers}_bs{bs_idx}.npy"
     
+    if load_data and os.path.exists(file_name):
+        print(f"\nLoading data for scenario: {scenario}, BS #{bs_idx}")
+        data = np.load(file_name, allow_pickle=True).item()
+        print(f"Data loaded from {file_name}")
+        return data
+
+    print(f"\nGenerating data for scenario: {scenario}, BS #{bs_idx}")
     deepMIMO_dataset = DeepMIMOv3.generate_data(parameters)
     uniform_idxs = uniform_sampling(deepMIMO_dataset, [1, 1], len(parameters['user_rows']), 
                                     users_per_row=row_column_users[scenario]['n_per_row'])
     data = select_by_idx(deepMIMO_dataset, uniform_idxs)[0]
+    
+    if load_data:
+        os.makedirs(save_dir, exist_ok=True)
+        np.save(file_name, data)
+        print(f"Data saved to {file_name}")
         
     return data
 
@@ -507,12 +521,12 @@ def label_prepend(deepmimo_data, preprocessed_chs, task, scenario_idxs, n_beams=
     
     return preprocessed_chs
 
-def create_labels(task, scenario_names, n_beams=64):
+def create_labels(task, scenario_names, n_beams=64, load_data=False, save_dir="../downstream_cache"):
     labels = []
     if isinstance(scenario_names, str):
         scenario_names = [scenario_names]
     for scenario_name in scenario_names:
-        data = DeepMIMO_data_gen(scenario_name)
+        data = DeepMIMO_data_gen(scenario_name, load_data=load_data, save_dir=save_dir)
         labels.extend(label_gen(task, data, scenario_name, n_beams=n_beams))
     return torch.tensor(labels).long()
 #%%
