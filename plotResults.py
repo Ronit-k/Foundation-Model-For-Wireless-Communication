@@ -13,26 +13,30 @@ def plot_results():
     # Configurations & F1 Scores
     data_cls = {
         'Base LWM1.0 + Base CNN':   [0.4231, 0.5108, 0.6642, 0.7200, 0.7609, 0.8031],
-        'Base LWM1.0 + SECNN': [0.4726, 0.5493, 0.7098, 0.7596, 0.8012, 0.8354],
+        # 'Base LWM1.0 + SECNN': [0.4726, 0.5493, 0.7098, 0.7596, 0.8012, 0.8354],
+        # 'LWM1.0_Axial + SECNN': [0.6756, 0.7251, 0.8000, 0.8185, 0.8318, 0.8407],
         'LWM1.0_CA + SECNN':        [0.5805, 0.6601, 0.7959, 0.8351, 0.8576, 0.8748],
+        # 'LWM1.0_Physics + SECNN' : [0.6056, 0.6692, 0.7639, 0.7884, 0.8028, 0.8141]
         # 'Base LWM1.1 + Base CNN':[0.4003, 0.4046, 0.5679, 0.5758, 0.6878, 0.7314],
         # 'LWM1.1_CA + SECNN':     [0.4921, 0.5686, 0.7218, 0.7632, 0.7823, 0.8021],
-        # 'mat_pseudo + Base CNN': [0.4598, 0.5761, 0.6821, 0.7720, 0.7983, 0.8188],
+        'mat_pseudo + Base CNN': [0.4598, 0.5761, 0.6821, 0.7720, 0.7983, 0.8188],
         # 'mat_pseudo + SECNN': [0.5771, 0.6509, 0.7790, 0.8067, 0.8218, 0.8370],
         'mat_pseudo_ca + SECNN': [0.6219, 0.6821, 0.7917, 0.8202, 0.8390, 0.8515]
     }
     data_emb = {
-        # 'Base LWM1.0 + Base CNN':   [0.7815, 0.8361, 0.9082, 0.9296, 0.9394, 0.9524],
-        'Base LWM1.0 + SECNN': [0.7810, 0.8496, 0.9226, 0.9384, 0.9508, 0.9602],
+        'Base LWM1.0 + Base CNN':   [0.7815, 0.8361, 0.9082, 0.9296, 0.9394, 0.9524],
+        # 'Base LWM1.0 + SECNN': [0.7810, 0.8496, 0.9226, 0.9384, 0.9508, 0.9602],
+        # 'LWM1.0_Axial + SECNN': [0.6978, 0.7572, 0.8923, 0.9139, 0.9295, 0.9402],
         'LWM1.0_CA + SECNN':        [0.8196, 0.8694, 0.9287, 0.9410, 0.9525, 0.9592],
+        # 'LWM1.0_Physics + SECNN' : [0.7275, 0.8025, 0.8979, 0.9239, 0.9363, 0.9451]
         # 'Base LWM1.1 + Base CNN':[0.7119, 0.7905, 0.8866, 0.9105, 0.9302, 0.9454],
-        'LWM1.1_CA + SECNN':     [0.7528, 0.8164, 0.9101, 0.9255, 0.9400, 0.9480],
-        # 'mat_pseudo + Base CNN': [0.7327, 0.8209, 0.9089, 0.9244, 0.9380, 0.9466],
-        'mat_pseudo + SECNN': [0.8074, 0.8551, 0.9174, 0.9316, 0.9437, 0.9520],
+        # 'LWM1.1_CA + SECNN':     [0.7528, 0.8164, 0.9101, 0.9255, 0.9400, 0.9480],
+        'mat_pseudo + Base CNN': [0.7327, 0.8209, 0.9089, 0.9244, 0.9380, 0.9466],
+        # 'mat_pseudo + SECNN': [0.8074, 0.8551, 0.9174, 0.9316, 0.9437, 0.9520],
         'mat_pseudo_ca + SECNN': [0.8139, 0.8641, 0.9213, 0.9354, 0.9452, 0.9536]
     }
 
-    choice = ['Channel','cls'][1]
+    choice = ['channel','cls'][0]
     if (choice == 'cls'):
         data = data_cls
     else:
@@ -44,8 +48,8 @@ def plot_results():
 
     # --- Plotting Setup ---
     # Create 1 row, 2 columns with a refined soft background
-    fig, axes = plt.subplots(1, 2, figsize=(18, 7), facecolor='#F8F9FA')
-    fig.patch.set_facecolor('#F8F9FA')  
+    fig, axes = plt.subplots(1, 2, figsize=(18, 7), facecolor='#FFFFFF')
+    fig.patch.set_facecolor('#FFFFFF')  
     
     # Main Heading 
     fig.suptitle(f'Using {choice} Embeddings for Beam Prediction Task', 
@@ -104,12 +108,14 @@ def plot_results():
     plt.show()
 
     # --- Save Prompt ---
-    save_query = input(f"\nDo you want to save this plot as 'Mat_pseudo_{choice}_benchmark.png'? (yes/no): ").strip().lower()
+    save_query = input(f"\nDo you want to save this plot? (yes/no): ").strip().lower()
 
     if save_query in ['yes', 'y']:
         # Ensure identical styling goes into the PNG file
-        fig.savefig(f'Mat_pseudo_{choice}_benchmark.png', dpi=300, facecolor=fig.get_facecolor(), edgecolor='none')
-        print(f"Successfully saved to 'Mat_pseudo_{choice}_benchmark.png'")
+        fig_name = input("Enter the name of the plot : ")
+        fig_name += '_' + choice
+        fig.savefig(f'{fig_name}.png', dpi=300, facecolor=fig.get_facecolor(), edgecolor='none')
+        print(f"Successfully saved to '{fig_name}.png'")
     else:
         print("Plot not saved.")
 
